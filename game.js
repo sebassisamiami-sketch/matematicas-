@@ -450,6 +450,19 @@ const titles = {
     master:   { name:"Maestra de las Mates", emoji:"🎓", text:"🎓 Maestra de las Mates", price:50 }
 };
 
+/* ============ PREMIO MAYOR: recompensas en dinero real (con 💎) ============
+   Se redimen SOLO al completar los 6 niveles. Cada premio da $5.000 COP.
+   Al redimir uno, aparece el siguiente (más caro). */
+const cashPrizes = [
+    { cost: 10000, cop: 5000 },
+    { cost: 30000, cop: 5000 }
+];
+function getCashRedeemed() { return parseInt(lsGet('vmCashRedeemed','0'),10) || 0; }
+function setCashRedeemed(n) { lsSet('vmCashRedeemed', String(Math.max(0, n))); }
+function getCashLog() { try { return JSON.parse(lsGet('vmCashLog','[]')); } catch(e){ return []; } }
+function addCashLog(entry) { const log = getCashLog(); log.push(entry); lsSet('vmCashLog', JSON.stringify(log)); }
+function formatCOP(n) { return '$' + n.toLocaleString('es-CO') + ' COP'; }
+
 /* ============ ESTADO ============ */
 let questions = [];
 let currentQ = 0;
@@ -1017,10 +1030,101 @@ function renderShop() {
     document.getElementById('shop-gems').innerText = getGems();
     const owned = getOwned(); const equip = getEquip();
 
+    renderGrandPrize();
     renderShopSection('shop-backgrounds', backgrounds, 'bg', 'gems', owned, equip);
     renderShopSection('shop-characters', characters, 'char', 'gems', owned, equip);
     renderShopSection('shop-stickers', stickers, 'sticker', 'points', owned, equip);
     renderShopSection('shop-titles', titles, 'title', 'stars', owned, equip);
+}
+
+/* Renderiza el Premio Mayor (recompensa en dinero real) */
+function renderGrandPrize() {
+    const cont = document.getElementById('shop-grandprize');
+    if (!cont) return;
+    const redeemed = getCashRedeemed();
+    const log = getCashLog();
+    const allDone = allLevelsDone();
+
+    let html = '';
+    if (redeemed >= cashPrizes.length) {
+        // Ya redimió todos los premios disponibles
+        html += `<div class="shop-item grand-prize">
+            <div class="shop-emoji">🏅</div>
+            <div class="shop-name">¡Todos los premios redimidos!</div>
+            <div class="cop-badge">🎉 ¡Eres una campeona! 🎉</div>
+            <div class="grand-note">Total ganado: ${formatCOP(cashPrizes.reduce((s,p)=>s+p.cop,0))}</div>
+        </div>`;
+    } else {
+        const prize = cashPrizes[redeemed];
+        const gems = getGems();
+        let btn;
+        if (!allDone) {
+            btn = `<button class="btn btn-buy locked" onclick="redeemCash()">🔒 Completa los 6 niveles</button>`;
+        } else if (gems < prize.cost) {
+            btn = `<button class="btn btn-buy locked" onclick="redeemCash()">${prize.cost.toLocaleString('es-CO')} 💎</button>`;
+        } else {
+            btn = `<button class="btn btn-buy own" style="background:#10AC84;box-shadow:0 5px 0 #0a8f6d;" onclick="redeemCash()">¡Redimir por ${prize.cost.toLocaleString('es-CO')} 💎!</button>`;
+        }
+        html += `<div class="shop-item grand-prize">
+            <div class="shop-emoji">🪙</div>
+            <div class="shop-name">Premio de Oro</div>
+            <div class="cop-badge">💵 Redime ${formatCOP(prize.cop)}</div>
+            ${btn}
+            <div class="grand-note">Tienes ${gems.toLocaleString('es-CO')} 💎 · Cuesta ${prize.cost.toLocaleString('es-CO')} 💎</div>
+        </div>`;
+    }
+
+    // Historial de premios redimidos (para que los papás lleven la cuenta)
+    if (log.length) {
+        html += `<div class="grand-log"><b>🧾 Premios redimidos:</b>`;
+        log.forEach(e => {
+            html += `<div class="log-item">${formatCOP(e.cop)} · código <b>${e.code}</b> · ${e.date}</div>`;
+        });
+        html += `</div>`;
+    }
+    cont.innerHTML = html;
+}
+
+/* Redime un premio en dinero real (solo si completó todos los niveles y tiene 💎) */
+function redeemCash() {
+    const redeemed = getCashRedeemed();
+    if (redeemed >= cashPrizes.length) return;
+    const prize = cashPrizes[redeemed];
+
+    if (!allLevelsDone()) {
+        showBuddyBubble('¡Primero completa los 6 niveles! 🔒');
+        playWrong(); return;
+    }
+    if (getGems() < prize.cost) {
+        showBuddyBubble('¡Te faltan 💎! Juega más para ganar. 😉');
+        playWrong(); return;
+    }
+    // Descontar gemas, registrar y avanzar al siguiente premio
+    addGems(-prize.cost);
+    const code = 'VAL-' + Math.floor(1000 + Math.random() * 9000);
+    const date = new Date().toLocaleDateString('es-CO');
+    addCashLog({ cop: prize.cop, code: code, date: date });
+    setCashRedeemed(redeemed + 1);
+
+    playWin(); launchConfetti(140);
+    const next = cashPrizes[redeemed + 1];
+    const extra = next
+        ? `¡Se desbloqueó un nuevo premio de ${formatCOP(next.cop)} por ${next.cost.toLocaleString('es-CO')} 💎!`
+        : '¡Redimiste todos los premios! 🏆';
+    showCertificate(prize.cop, code, extra);
+    renderShop();
+}
+
+/* Muestra el certificado de premio */
+function showCertificate(cop, code, extra) {
+    document.getElementById('cert-cop').innerText = formatCOP(cop);
+    document.getElementById('cert-code').innerText = code;
+    document.getElementById('cert-extra').innerText = extra || '';
+    document.getElementById('cert-overlay').classList.remove('hidden');
+}
+function closeCertificate() {
+    document.getElementById('cert-overlay').classList.add('hidden');
+    playClick();
 }
 
 function renderShopSection(containerId, data, kind, cur, owned, equip) {
@@ -1073,7 +1177,8 @@ function openProgress() {
     showScreen('progress-screen');
     const data = {
         gems: getGems(), points: getPoints(), stars: getStars(),
-        medals: getMedals(), owned: getOwned(), equip: getEquip()
+        medals: getMedals(), owned: getOwned(), equip: getEquip(),
+        cashRedeemed: getCashRedeemed(), cashLog: getCashLog()
     };
     document.getElementById('export-code').value = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
     document.getElementById('import-msg').innerText = '';
@@ -1099,6 +1204,8 @@ function importProgress() {
         if (data.medals) lsSet('vmMedals', JSON.stringify(data.medals));
         if (data.owned) setOwned(data.owned);
         if (data.equip) setEquip(data.equip);
+        if (data.cashRedeemed !== undefined) setCashRedeemed(data.cashRedeemed);
+        if (data.cashLog) lsSet('vmCashLog', JSON.stringify(data.cashLog));
         msg.style.color = '#228B22'; msg.innerText = '¡Progreso cargado! 🎉';
         playWin(); applyEquip();
     } catch(e) {
