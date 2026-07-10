@@ -50,6 +50,27 @@ const allQuestions = [
       examples:[{op:"8.921 × 100",res:"892.100"},{op:"7 × 100",res:"700"}],
       scene:'<span class="a-bounce">🪙</span><span class="a-float">🛒</span>' },
 
+    { level:1, q:"🛒 ¿Cuánto es 350 × 100?",
+      options:[{text:"3.500"},{text:"35.000"},{text:"350.000"}], answer:1,
+      rule:"✖️ Multiplicar por 100",
+      exp:"Por 100 agregamos DOS ceros al final. 350 se convierte en 35.000.",
+      examples:[{op:"350 × 100",res:"35.000"},{op:"3 × 100",res:"300"}],
+      scene:'<span class="a-float">🏪</span><span class="a-bounce">💲</span>' },
+
+    { level:1, q:"🛒 ¿Cuánto es 42 × 1000?",
+      options:[{text:"42.000"},{text:"4.200"},{text:"420.000"}], answer:0,
+      rule:"✖️ Multiplicar por 1000",
+      exp:"Por 1000 agregamos TRES ceros al final. 42 se convierte en 42.000.",
+      examples:[{op:"42 × 1000",res:"42.000"},{op:"9 × 1000",res:"9.000"}],
+      scene:'<span class="a-bounce">🧾</span><span class="a-float">💰</span>' },
+
+    { level:1, q:"🛒 ¿Cuánto es 609 × 10?",
+      options:[{text:"6.090"},{text:"60.900"},{text:"609"}], answer:0,
+      rule:"✖️ Multiplicar por 10",
+      exp:"Por 10 agregamos UN cero al final. 609 se convierte en 6.090.",
+      examples:[{op:"609 × 10",res:"6.090"},{op:"80 × 10",res:"800"}],
+      scene:'<span class="a-float">🛒</span><span class="a-bounce">🪙</span>' },
+
     /* ---------- NIVEL 2: DIVISIONES SIMPLES ---------- */
     { level:2, q:"🍬 Reparte 20 caramelos entre 4 amigos: 20 ÷ 4 = ?",
       options:[{text:"4"},{text:"5"},{text:"6"}], answer:1,
@@ -93,6 +114,34 @@ const allQuestions = [
       examples:[{op:"72 ÷ 9",res:"8"},{op:"9 × 8",res:"72 ✔"}],
       scene:'<span class="a-bounce">🍭</span><span class="a-float">✨</span>' },
 
+    { level:2, q:"🍬 15 ÷ 5 = ?",
+      options:[{text:"3"},{text:"5"},{text:"2"}], answer:0,
+      rule:"➗ División exacta",
+      exp:"5 × 3 = 15, así que 15 ÷ 5 = 3.",
+      examples:[{op:"15 ÷ 5",res:"3"},{op:"5 × 3",res:"15 ✔"}],
+      scene:'<span class="a-bounce">🍬</span><span class="a-float">5️⃣</span>' },
+
+    { level:2, q:"🍬 40 ÷ 8 = ?",
+      options:[{text:"6"},{text:"5"},{text:"4"}], answer:1,
+      rule:"➗ División exacta",
+      exp:"8 × 5 = 40, así que 40 ÷ 8 = 5.",
+      examples:[{op:"40 ÷ 8",res:"5"},{op:"8 × 5",res:"40 ✔"}],
+      scene:'<span class="a-float">🍭</span><span class="a-bounce">8️⃣</span>' },
+
+    { level:2, q:"🍬 14 ÷ 2 = ?",
+      options:[{text:"7"},{text:"6"},{text:"8"}], answer:0,
+      rule:"➗ División exacta",
+      exp:"2 × 7 = 14, así que 14 ÷ 2 = 7. ¡Dividir entre 2 es partir a la mitad!",
+      examples:[{op:"14 ÷ 2",res:"7"},{op:"2 × 7",res:"14 ✔"}],
+      scene:'<span class="a-bounce">🍬</span><span class="a-float">2️⃣</span>' },
+
+    { level:2, q:"🍬 55 ÷ 6 = ? (¡puede sobrar!)",
+      options:[{text:"9 y sobran 1"},{text:"8 y sobran 7"},{text:"9 sin sobrar"}], answer:0,
+      rule:"➗ División con residuo",
+      exp:"6 × 9 = 54. De 55 a 54 sobra 1. Como 1 es menor que 6, ya no se reparte más. Cociente 9 y residuo 1.",
+      examples:[{op:"6 × 9",res:"54"},{op:"55 − 54",res:"1 (sobra)"}],
+      scene:'<span class="a-float">🍬</span><span class="a-bounce">➗</span>' },
+
     /* ---------- NIVEL 3: OPERACIONES COMBINADAS ---------- */
     { level:3, q:"🏭 Resuelve: 2 × 4 + 52 + 7 × 8 − 23",
       options:[{text:"93"},{text:"120"},{text:"85"}], answer:0,
@@ -128,6 +177,20 @@ const allQuestions = [
       exp:"Primero multiplicamos: 5×10=50 y 3×7=21. Luego: 100 − 50 + 21 = 71.",
       examples:[{op:"5×10 y 3×7",res:"50 y 21"},{op:"100−50+21",res:"71"}],
       scene:'<span class="a-swing">🏭</span><span class="a-float">✨</span>' },
+
+    { level:3, q:"🏭 Resuelve: 6 × 5 + 20 − 3 × 4",
+      options:[{text:"38"},{text:"44"},{text:"32"}], answer:0,
+      rule:"🔢 Orden de operaciones",
+      exp:"Primero multiplicamos: 6×5=30 y 3×4=12. Luego: 30 + 20 − 12 = 38.",
+      examples:[{op:"6×5 y 3×4",res:"30 y 12"},{op:"30+20−12",res:"38"}],
+      scene:'<span class="a-float">🏭</span><span class="a-swing">⚙️</span>' },
+
+    { level:3, q:"🏭 Resuelve: 200 − 10 × 5 + 2 × 8",
+      options:[{text:"166"},{text:"150"},{text:"176"}], answer:0,
+      rule:"🔢 Orden de operaciones",
+      exp:"Primero multiplicamos: 10×5=50 y 2×8=16. Luego: 200 − 50 + 16 = 166.",
+      examples:[{op:"10×5 y 2×8",res:"50 y 16"},{op:"200−50+16",res:"166"}],
+      scene:'<span class="a-swing">🔧</span><span class="a-float">🏭</span>' },
 
     /* ---------- NIVEL 4: DIVISORES, M.C.M. y M.C.D. ---------- */
     { level:4, q:"📚 ¿Cuáles son TODOS los divisores de 14?",
@@ -179,6 +242,34 @@ const allQuestions = [
       examples:[{op:"10 × 6",res:"60"},{op:"12 × 5",res:"60"}],
       scene:'<span class="a-float">📚</span><span class="a-bounce">✨</span>' },
 
+    { level:4, q:"📚 Taller: M.C.M. (8, 4) = ?",
+      options:[{text:"8"},{text:"32"},{text:"4"}], answer:0,
+      rule:"🔗 Mínimo Común Múltiplo",
+      exp:"Como 8 ya es múltiplo de 4 (4×2=8), el menor múltiplo común de 8 y 4 es 8.",
+      examples:[{op:"8 × 1",res:"8"},{op:"4 × 2",res:"8"}],
+      scene:'<span class="a-bounce">📚</span><span class="a-float">🔗</span>' },
+
+    { level:4, q:"📚 Taller: M.C.D. (15, 18) = ?",
+      options:[{text:"3"},{text:"5"},{text:"1"}], answer:0,
+      rule:"🧩 Máximo Común Divisor",
+      exp:"El divisor común más grande de 15 y 18 es 3 (15÷3=5 y 18÷3=6).",
+      examples:[{op:"15 ÷ 3",res:"5 ✔"},{op:"18 ÷ 3",res:"6 ✔"}],
+      scene:'<span class="a-float">📘</span><span class="a-bounce">🧩</span>' },
+
+    { level:4, q:"📚 Taller: M.C.D. (30, 30) = ?",
+      options:[{text:"30"},{text:"15"},{text:"1"}], answer:0,
+      rule:"🧩 Máximo Común Divisor",
+      exp:"Cuando los dos números son iguales, el M.C.D. es ese mismo número. Por eso M.C.D.(30, 30) = 30.",
+      examples:[{op:"30 ÷ 30",res:"1 ✔"},{op:"iguales",res:"M.C.D. = 30"}],
+      scene:'<span class="a-bounce">📙</span><span class="a-float">🧩</span>' },
+
+    { level:4, q:"📚 ¿Cuáles son TODOS los divisores de 18?",
+      options:[{text:"1, 2, 3, 6, 9, 18"},{text:"1, 2, 4, 9, 18"},{text:"1, 3, 6, 18"}], answer:0,
+      rule:"🔎 Divisores",
+      exp:"18 se divide exacto entre 1, 2, 3, 6, 9 y 18. El 4 no sirve porque 18 ÷ 4 sobra.",
+      examples:[{op:"18 ÷ 3",res:"6 ✔"},{op:"18 ÷ 9",res:"2 ✔"}],
+      scene:'<span class="a-float">📗</span><span class="a-bounce">🔢</span>' },
+
     /* ---------- NIVEL 5: GEOMETRÍA Y MEDICIÓN ---------- */
     { level:5, q:"🔬 Perímetro de un cuadrado de 15 cm por lado",
       options:[{text:"60 cm"},{text:"45 cm"},{text:"225 cm"}], answer:0,
@@ -222,6 +313,34 @@ const allQuestions = [
       examples:[{op:"corta en 3",res:"3 horas"},{op:"larga en 12",res:"00 min"}],
       scene:'<span class="a-spin">🕒</span><span class="a-float">⏰</span>' },
 
+    { level:5, q:"🔬 Área de un triángulo de base 6 cm y altura 4 cm",
+      options:[{text:"12 cm²"},{text:"24 cm²"},{text:"10 cm²"}], answer:0,
+      rule:"📐 Área del triángulo",
+      exp:"El área del triángulo es (base × altura) ÷ 2. Entonces (6 × 4) ÷ 2 = 24 ÷ 2 = 12 cm².",
+      examples:[{op:"6 × 4",res:"24"},{op:"24 ÷ 2",res:"12 cm²"}],
+      scene:'<span class="a-float">🔺</span><span class="a-bounce">📐</span>' },
+
+    { level:5, q:"⏰ 1 semana = ¿cuántos días?",
+      options:[{text:"7 días"},{text:"5 días"},{text:"30 días"}], answer:0,
+      rule:"⏳ Equivalencias de tiempo",
+      exp:"Una semana tiene 7 días: lunes, martes, miércoles, jueves, viernes, sábado y domingo.",
+      examples:[{op:"1 semana",res:"7 días"},{op:"1 día",res:"24 horas"}],
+      scene:'<span class="a-float">📆</span><span class="a-bounce">🗓️</span>' },
+
+    { level:5, q:"⏰ 1 década = ¿cuántos años?",
+      options:[{text:"10 años"},{text:"100 años"},{text:"12 años"}], answer:0,
+      rule:"⏳ Equivalencias de tiempo",
+      exp:"Una década son 10 años. Recuerda: década = 10, siglo = 100, milenio = 1000.",
+      examples:[{op:"1 década",res:"10 años"},{op:"1 siglo",res:"100 años"}],
+      scene:'<span class="a-spin">🕰️</span><span class="a-float">🔟</span>' },
+
+    { level:5, q:"🕐 El reloj marca la manecilla corta en el 6 y la larga en el 12. ¿Qué hora es?",
+      options:[{text:"6:00"},{text:"12:06"},{text:"6:30"}], answer:0,
+      rule:"🕐 Leer la hora",
+      exp:"La manecilla corta marca la hora (el 6) y la larga en el 12 son 00 minutos. Por eso son las 6:00.",
+      examples:[{op:"corta en 6",res:"6 horas"},{op:"larga en 12",res:"00 min"}],
+      scene:'<span class="a-spin">🕕</span><span class="a-float">⏰</span>' },
+
     /* ---------- NIVEL 6: ESTADÍSTICA ---------- */
     { level:6, q:"🌾 Granja: Patatas 30, Zanahorias 25, Tomates 40, Berenjenas 55, Calabazas 20. ¿Cuál hay MÁS?",
       options:[{text:"Berenjenas"},{text:"Tomates"},{text:"Patatas"}], answer:0,
@@ -256,7 +375,28 @@ const allQuestions = [
       rule:"📊 Diagrama de barras",
       exp:"En un diagrama de barras, la barra más alta representa la mayor cantidad. Como Berenjenas tiene 55 (el mayor), su barra es la más alta.",
       examples:[{op:"Barra más alta",res:"55 (Berenjenas)"}],
-      scene:'<span class="a-bounce">📊</span><span class="a-float">🍆</span>' }
+      scene:'<span class="a-bounce">📊</span><span class="a-float">🍆</span>' },
+
+    { level:6, q:"🌾 ¿Cuántas zanahorias y calabazas hay juntas? (25 + 20)",
+      options:[{text:"45"},{text:"40"},{text:"50"}], answer:0,
+      rule:"📊 Sumar frecuencias",
+      exp:"Sumamos las dos frecuencias: 25 zanahorias + 20 calabazas = 45.",
+      examples:[{op:"25 + 20",res:"45"}],
+      scene:'<span class="a-float">🥕</span><span class="a-bounce">🎃</span>' },
+
+    { level:6, q:"🌾 ¿Cuál es la diferencia entre el que MÁS hay y el que MENOS hay? (55 − 20)",
+      options:[{text:"35"},{text:"30"},{text:"25"}], answer:0,
+      rule:"📊 Rango de los datos",
+      exp:"El mayor es 55 (Berenjenas) y el menor es 20 (Calabazas). La diferencia es 55 − 20 = 35.",
+      examples:[{op:"55 − 20",res:"35"}],
+      scene:'<span class="a-bounce">🍆</span><span class="a-float">🎃</span>' },
+
+    { level:6, q:"🌾 Si hay 40 tomates y 30 patatas, ¿de cuál hay más?",
+      options:[{text:"Tomates"},{text:"Patatas"},{text:"Iguales"}], answer:0,
+      rule:"📊 Comparar frecuencias",
+      exp:"40 es mayor que 30, así que hay más Tomates que Patatas.",
+      examples:[{op:"40 vs 30",res:"40 gana 🍅"}],
+      scene:'<span class="a-float">🍅</span><span class="a-bounce">🥔</span>' }
 ];
 
 /* Nombres e íconos de cada nivel (para el mapa) */
@@ -266,7 +406,8 @@ const levelInfo = {
     3: { name:"Operaciones",    icon:"🏭", color:"lvl-c3" },
     4: { name:"Divisores/MCM/MCD", icon:"📚", color:"lvl-c4" },
     5: { name:"Geometría",      icon:"🔬", color:"lvl-c5" },
-    6: { name:"Estadística",    icon:"🌾", color:"lvl-c6" }
+    6: { name:"Estadística",    icon:"🌾", color:"lvl-c6" },
+    0: { name:"¡Desafío Final!", icon:"🏆", color:"lvl-boss" }
 };
 
 
@@ -314,6 +455,7 @@ let questions = [];
 let currentQ = 0;
 let score = 0, points = 0, gems = 0, streak = 0, bestStreak = 0;
 let answers = [];
+let hintUsed = [];
 let currentLevel = 1;
 let soundOn = true, musicOn = false, audioCtx = null;
 
@@ -368,11 +510,19 @@ function saveMedal(level, rank) {
 function levelUnlocked(level) {
     if (level === 1) return true;
     const m = getMedals();
+    if (level === 0) return [1,2,3,4,5,6].every(l => m[l]); // desafío final: todos los niveles
     return !!m[level-1]; // se desbloquea al completar el anterior
 }
+function allLevelsDone() { const m = getMedals(); return [1,2,3,4,5,6].every(l => m[l]); }
+// Cantidad de niveles (1-6) completados, para el medidor de nota
+function levelsCompleted() { const m = getMedals(); return [1,2,3,4,5,6].filter(l => m[l]).length; }
+// Nota actual de 1.0 a 5.0 según niveles completados
+function currentGrade() { return 1 + (levelsCompleted() / 6) * 4; }
 
 /* ============ SONIDOS (Web Audio) ============ */
 function getCtx() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
+// Desbloquea el audio en el primer gesto del usuario (requerido en móviles)
+function unlockAudio() { try { const ctx = getCtx(); if (ctx.state === 'suspended') ctx.resume(); } catch(e){} }
 function playTone(freq, duration, type='sine', startTime=0, vol=0.2) {
     if (!soundOn) return;
     try {
@@ -572,9 +722,43 @@ function renderMap() {
             </button>
             <span class="node-label">Nivel ${lvl}<br>${info.name}</span>
         </div></div>`;
-        if (i < order.length - 1) html += '<div class="map-connector"></div>';
+        html += '<div class="map-connector"></div>';
     });
+    // Nodo del Desafío Final (nivel 0), se desbloquea al completar los 6
+    const bossInfo = levelInfo[0];
+    const bossUnlocked = levelUnlocked(0);
+    const bossDone = !!medals[0];
+    const bossCls = 'node-btn ' + bossInfo.color + (bossDone ? ' done' : '');
+    const bossMedal = bossDone ? `<span class="node-medal">${rankEmoji[medals[0]]}</span>` : '';
+    const bossLock = (!bossUnlocked && !bossDone) ? `<span class="node-lock">🔒</span>` : '';
+    const bossDis = (!bossUnlocked && !bossDone) ? 'disabled' : '';
+    html += `<div class="map-node"><div class="node-wrap">
+        <button class="${bossCls}" ${bossDis} onclick="startGame(0)">
+            ${bossInfo.icon}${bossMedal}${bossLock}
+        </button>
+        <span class="node-label">${bossInfo.name}</span>
+    </div></div>`;
     map.innerHTML = html;
+    renderGrade();
+}
+
+/* ============ MEDIDOR DE NOTA (1.0 → 5.0) ============ */
+function renderGrade() {
+    const el = document.getElementById('grade-meter');
+    if (!el) return;
+    const grade = currentGrade();
+    const done = levelsCompleted();
+    const pct = ((grade - 1) / 4) * 100;
+    const color = grade >= 4.5 ? '#10AC84' : grade >= 3 ? '#FF9F43' : '#EE5253';
+    el.innerHTML = `
+        <div class="grade-top">📊 Nota de Valery:
+            <span class="grade-value" style="color:${color}">${grade.toFixed(1)}</span>
+        </div>
+        <div class="grade-track">
+            <div class="grade-fill" style="width:${pct}%; background:${color};"></div>
+            <span class="grade-min">1.0</span><span class="grade-max">5.0</span>
+        </div>
+        <div class="grade-sub">${done}/6 niveles superados ${done===6?'· ¡Nota máxima! 🎉':''}</div>`;
 }
 function refreshStartHud() {
     document.getElementById('s-stars').innerText = getStars();
@@ -603,20 +787,28 @@ function showScreen(id) {
 
 /* ============ JUEGO ============ */
 function startGame(level) {
-    playClick(); getCtx();
+    playClick(); getCtx(); unlockAudio();
     if (!levelUnlocked(level) && !getMedals()[level]) {
-        showBuddyBubble('¡Completa el nivel anterior primero! 🔒');
+        showBuddyBubble(level === 0 ? '¡Completa los 6 niveles primero! 🔒' : '¡Completa el nivel anterior primero! 🔒');
         return;
     }
     currentLevel = level;
-    // Mezclamos las preguntas del nivel y las opciones de cada una
-    questions = shuffle(allQuestions.filter(q => q.level === level)).map(q => {
+    // Elegimos las preguntas: nivel normal = subconjunto del nivel; desafío (0) = mezcla de todos
+    let pool;
+    if (level === 0) {
+        pool = shuffle(allQuestions).slice(0, 10); // desafío final: 10 preguntas variadas
+    } else {
+        pool = shuffle(allQuestions.filter(q => q.level === level)).slice(0, 6); // 6 al azar del nivel
+    }
+    // Mezclamos también las opciones de cada pregunta
+    questions = pool.map(q => {
         const opts = q.options.map((o, idx) => ({ text: o.text, correct: idx === q.answer }));
         const shuffledOpts = shuffle(opts);
         return { ...q, shuffledOpts };
     });
     currentQ = 0; score = 0; points = 0; gems = 0; streak = 0; bestStreak = 0;
     answers = new Array(questions.length).fill(null);
+    hintUsed = new Array(questions.length).fill(false);
     showScreen('game-screen');
     showQuestion();
 }
@@ -640,11 +832,36 @@ function showQuestion() {
     document.getElementById('back-btn').disabled = currentQ === 0;
     document.getElementById('fwd-btn').disabled = !answers[currentQ];
 
+    // Botón de pista: activo solo si no se ha respondido ni usado la pista
+    const hintBtn = document.getElementById('hint-btn');
+    if (hintBtn) hintBtn.disabled = !!answers[currentQ] || !!hintUsed[currentQ];
+
     updateHUD();
     updateProgressBar();
 
     // Si ya fue respondida, mostrarla resuelta
     if (already) revealAnswered();
+}
+
+/* Pista 50/50: elimina una opción incorrecta (gratis, una vez por pregunta) */
+function useHint() {
+    if (answers[currentQ] || hintUsed[currentQ]) return;
+    const q = questions[currentQ];
+    const wrong = [];
+    q.shuffledOpts.forEach((o, i) => { if (!o.correct) wrong.push(i); });
+    if (!wrong.length) return;
+    const removeIdx = wrong[Math.floor(Math.random() * wrong.length)];
+    const btns = document.querySelectorAll('#options .btn-option');
+    if (btns[removeIdx]) {
+        btns[removeIdx].disabled = true;
+        btns[removeIdx].style.opacity = '0.3';
+        btns[removeIdx].style.textDecoration = 'line-through';
+    }
+    hintUsed[currentQ] = true;
+    const hintBtn = document.getElementById('hint-btn');
+    if (hintBtn) hintBtn.disabled = true;
+    playClick();
+    showBuddyBubble('¡Quité una opción incorrecta! 💡');
 }
 
 function revealAnswered() {
@@ -766,15 +983,24 @@ function endLevel() {
     else if (rank === 2) msg = '¡Muy bien! 🥈 Medalla de PLATA. ¡Sigue así!';
     else msg = '¡Buen intento! 🥉 Repite el nivel para ganar oro.';
 
-    // ¿Completó todos los niveles?
-    const medals = getMedals();
-    const allDone = [1,2,3,4,5,6].every(l => medals[l]);
-    if (allDone) msg += ' 🎓 ¡Completaste TODOS los niveles! ¡Pasaste de 1.0 a 5.0! 🏆';
+    if (currentLevel === 0) {
+        // Desafío Final
+        msg = (rank === 3)
+            ? '🏆 ¡DESAFÍO FINAL SUPERADO A LA PERFECCIÓN! ¡Eres una LEYENDA de las mates! 👑'
+            : '🏆 ¡Completaste el Desafío Final! ¡Increíble, Valery!';
+    }
+
+    // Nota actual y si completó todos los niveles
+    const allDone = allLevelsDone();
+    msg += ` 📊 Tu nota ahora es ${currentGrade().toFixed(1)}.`;
+    if (allDone && currentLevel !== 0) {
+        msg += ' 🎓 ¡Completaste TODOS los niveles! ¡Pasaste de 1.0 a 5.0! 🏆 Ahora prueba el 🏆 Desafío Final.';
+    }
 
     document.getElementById('end-message').innerText = msg;
     showScreen('end-screen');
-    playWin(); launchConfetti(80);
-    showRewardPopup('🏅 ¡Nivel superado!');
+    playWin(); launchConfetti(currentLevel === 0 ? 120 : 80);
+    showRewardPopup(currentLevel === 0 ? '👑 ¡Leyenda!' : '🏅 ¡Nivel superado!');
 }
 
 /* ============ TIENDA ============ */
@@ -913,6 +1139,9 @@ function init() {
     renderMap();
     refreshStartHud();
     renderFontPicker();
+    // Desbloquear audio en el primer gesto del usuario (móviles/navegadores lo exigen)
+    document.addEventListener('pointerdown', unlockAudio, { once: true });
+    document.addEventListener('keydown', unlockAudio, { once: true });
     // Saludo de la mascota
     setTimeout(() => showBuddyBubble('¡Hola Valery! Toca un nivel para empezar. 🚀'), 800);
 }
