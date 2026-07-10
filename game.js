@@ -925,6 +925,11 @@ function checkAnswer(selectedIndex, btn) {
         playWrong();
         const b = document.getElementById('game-container');
         b.classList.add('shake'); setTimeout(()=>b.classList.remove('shake'), 500);
+        // La mascota dice "buh" en cada respuesta incorrecta
+        const buhMsgs = ['¡Buuuh! 👎', '¡Buh, buh! 🫤', '¡Buuuh! ¡Inténtalo otra vez! 💪', '¡Buh! Casi... 😅'];
+        showBuddyBubble(buhMsgs[Math.floor(Math.random() * buhMsgs.length)]);
+        const buddy = document.getElementById('buddy');
+        if (buddy) { buddy.classList.remove('react-shake2'); void buddy.offsetWidth; buddy.classList.add('react-shake2'); setTimeout(()=>buddy.classList.remove('react-shake2'), 900); }
     }
     showExplanation(isCorrect);
     updateHUD();
