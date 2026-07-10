@@ -469,6 +469,8 @@ let currentQ = 0;
 let score = 0, points = 0, gems = 0, streak = 0, bestStreak = 0;
 let answers = [];
 let hintUsed = [];
+const HINTS_PER_LEVEL = 5;   // pistas disponibles por nivel
+let hintsLeft = 0;           // pistas restantes en el nivel actual
 let currentLevel = 1;
 let soundOn = true, musicOn = false, audioCtx = null;
 
@@ -822,6 +824,7 @@ function startGame(level) {
     currentQ = 0; score = 0; points = 0; gems = 0; streak = 0; bestStreak = 0;
     answers = new Array(questions.length).fill(null);
     hintUsed = new Array(questions.length).fill(false);
+    hintsLeft = HINTS_PER_LEVEL;   // se reinician las 5 pistas al empezar el nivel
     showScreen('game-screen');
     showQuestion();
 }
@@ -845,9 +848,8 @@ function showQuestion() {
     document.getElementById('back-btn').disabled = currentQ === 0;
     document.getElementById('fwd-btn').disabled = !answers[currentQ];
 
-    // Botón de pista: activo solo si no se ha respondido ni usado la pista
-    const hintBtn = document.getElementById('hint-btn');
-    if (hintBtn) hintBtn.disabled = !!answers[currentQ] || !!hintUsed[currentQ];
+    // Botón de pista: muestra pistas restantes y se desactiva según reglas
+    updateHintButton();
 
     updateHUD();
     updateProgressBar();
@@ -856,9 +858,19 @@ function showQuestion() {
     if (already) revealAnswered();
 }
 
-/* Pista 50/50: elimina una opción incorrecta (gratis, una vez por pregunta) */
+/* Actualiza el botón de pista: muestra las pistas restantes y lo activa/desactiva */
+function updateHintButton() {
+    const hintBtn = document.getElementById('hint-btn');
+    if (!hintBtn) return;
+    hintBtn.innerText = '💡 Pista (' + hintsLeft + ')';
+    // Se desactiva si: ya respondió, ya usó pista en esta pregunta, o no quedan pistas
+    hintBtn.disabled = !!answers[currentQ] || !!hintUsed[currentQ] || hintsLeft <= 0;
+}
+
+/* Pista 50/50: elimina una opción incorrecta. Máximo 5 por nivel, una por pregunta. */
 function useHint() {
     if (answers[currentQ] || hintUsed[currentQ]) return;
+    if (hintsLeft <= 0) { showBuddyBubble('¡Ya usaste tus 5 pistas de este nivel! 💡'); playWrong(); return; }
     const q = questions[currentQ];
     const wrong = [];
     q.shuffledOpts.forEach((o, i) => { if (!o.correct) wrong.push(i); });
@@ -871,10 +883,10 @@ function useHint() {
         btns[removeIdx].style.textDecoration = 'line-through';
     }
     hintUsed[currentQ] = true;
-    const hintBtn = document.getElementById('hint-btn');
-    if (hintBtn) hintBtn.disabled = true;
+    hintsLeft--;                 // consume una pista del nivel
+    updateHintButton();
     playClick();
-    showBuddyBubble('¡Quité una opción incorrecta! 💡');
+    showBuddyBubble('¡Quité una opción incorrecta! Te quedan ' + hintsLeft + ' pistas. 💡');
 }
 
 function revealAnswered() {
