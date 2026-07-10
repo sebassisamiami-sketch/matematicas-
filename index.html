@@ -164,6 +164,40 @@
         .btn-buy.equip { background:#32CD32; box-shadow:0 5px 0 #228B22; }
         .btn-buy.locked { background:#FFA500; box-shadow:0 5px 0 #CC7000; }
 
+        /* ===== PREMIO MAYOR (recompensa en dinero real) ===== */
+        .grand-title { color:#B8860B; text-shadow:1px 1px 0 #FFD700; }
+        #shop-grandprize { grid-template-columns:1fr; }
+        .grand-prize {
+            background: linear-gradient(135deg,#FFD700,#FFA500,#FFEC8B,#FFA500) !important;
+            border:4px solid #FF8C00 !important; border-radius:18px;
+            box-shadow:0 6px 20px rgba(255,165,0,0.5);
+            animation: goldenGlow 2s ease-in-out infinite;
+        }
+        @keyframes goldenGlow { 0%,100%{box-shadow:0 4px 12px rgba(255,165,0,0.4);} 50%{box-shadow:0 10px 30px rgba(255,215,0,0.9);} }
+        .grand-prize .shop-emoji { font-size:4em; }
+        .grand-prize .shop-name { font-size:1.35em; color:#8B4513; text-shadow:1px 1px 0 #FFF3B0; }
+        .grand-prize .cop-badge { font-size:1.6em; font-weight:bold; color:#7a4a00; margin:2px 0 6px; }
+        .grand-note { font-size:0.85em; color:#7a4a00; margin-top:6px; }
+        .grand-log { margin-top:10px; font-size:0.82em; color:#555; }
+        .grand-log .log-item { background:#fff; border:1px dashed #FFA500; border-radius:10px; padding:4px 8px; margin:4px 0; }
+
+        /* Certificado de premio (modal) */
+        #cert-overlay {
+            position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:100;
+            display:flex; align-items:center; justify-content:center; padding:20px;
+        }
+        #cert-overlay.hidden { display:none; }
+        .cert-card {
+            background: linear-gradient(135deg,#FFF9E6,#FFF3B0); border:6px solid #FFD700;
+            border-radius:22px; padding:26px 22px; max-width:380px; width:100%; text-align:center;
+            box-shadow:0 15px 40px rgba(0,0,0,0.4); animation: popIn 0.4s ease;
+        }
+        .cert-card h2 { color:#B8860B; margin:4px 0; }
+        .cert-cop { font-size:2.6em; font-weight:bold; color:#10AC84; margin:8px 0; }
+        .cert-code { font-family:monospace; font-size:1.3em; font-weight:bold; color:#8B4513;
+            background:#fff; border:2px dashed #FFA500; border-radius:12px; padding:8px 12px; display:inline-block; margin:8px 0; }
+        .cert-note { font-size:0.95em; color:#555; margin:10px 0; }
+
         /* ===== POPUPS Y RECOMPENSAS ===== */
         .reward-popup {
             position: fixed; left: 50%; top: 42%; transform: translateX(-50%);
@@ -299,6 +333,9 @@
             <h1>🛒 Tienda</h1>
             <div id="gem-wallet">⭐ <span id="shop-stars">0</span> &nbsp;·&nbsp; 🏆 <span id="shop-points">0</span> &nbsp;·&nbsp; 💎 <span id="shop-gems">0</span></div>
             <p style="color:#555;">¡Todo lo que ganas jugando se canjea! Fondos y personajes con 💎, calcomanías con 🏆 y títulos con ⭐.</p>
+            <h2 class="shop-section-title grand-title">🏆 ¡PREMIO MAYOR! 🎁</h2>
+            <p style="color:#B8860B; font-weight:bold;">¡El premio más grande de todos! Completa los 6 niveles y canjea tus 💎 por dinero real. 💰</p>
+            <div id="shop-grandprize" class="shop-grid"></div>
             <h2 class="shop-section-title">🖼️ Fondos <span style="font-size:0.7em;color:#FF8C00;">(con 💎)</span></h2>
             <div id="shop-backgrounds" class="shop-grid"></div>
             <h2 class="shop-section-title">🦄 Personajes <span style="font-size:0.7em;color:#FF8C00;">(con 💎)</span></h2>
@@ -347,6 +384,18 @@
             <p id="end-message" style="font-size: 1.3em; color: #555;"></p>
             <button class="btn" onclick="goMenu()">🗺️ Volver al mapa</button>
             <button class="btn btn-shop" onclick="openShop()">🛒 Ir a la Tienda</button>
+        </div>
+    </div>
+    <!-- Certificado de premio (se muestra al redimir) -->
+    <div id="cert-overlay" class="hidden">
+        <div class="cert-card">
+            <div style="font-size:3em;">🪙🎉</div>
+            <h2>¡Premio Redimido!</h2>
+            <div class="cert-cop" id="cert-cop">$5.000 COP</div>
+            <p class="cert-note">Muéstrale esta pantalla a tus papás para recibir tu premio. 💜</p>
+            <div class="cert-code" id="cert-code">VAL-0000</div>
+            <p class="cert-note" id="cert-extra"></p>
+            <button class="btn" onclick="closeCertificate()">¡Genial! 🎉</button>
         </div>
     </div>
     <script>
