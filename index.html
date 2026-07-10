@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Gran Desafio Matematico de Valery</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- ============================================ -->
+    <!-- PANTALLA DE BIENVENIDA -->
+    <!-- ============================================ -->
+    <div id="screen-welcome" class="screen active">
+        <div class="welcome-container">
+            <div class="stars-bg"></div>
+            <h1 class="game-title">El Gran Desafio Matematico</h1>
+            <h2 class="game-subtitle">de Recuperacion de Valery</h2>
+            <div class="avatar-container">
+                <div class="avatar" id="avatar-welcome">
+                    <div class="avatar-face">
+                        <div class="avatar-hair"></div>
+                        <div class="avatar-eyes">
+                            <div class="eye left"></div>
+                            <div class="eye right"></div>
+                        </div>
+                        <div class="avatar-mouth"></div>
+                    </div>
+                </div>
+            </div>
+            <p class="story-text">
+                Valery no obtuvo una buena nota en su examen de matematicas.
+                <br><strong>Ayudala a repasar todos los conceptos</strong> y superar una serie de desafios
+                para pasar de un <span class="score-bad">1.0</span> a un super <span class="score-good">5.0</span>!
+            </p>
+            <button class="btn-primary btn-start" onclick="Game.start()">
+                Comenzar Aventura
+            </button>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- PANTALLA DE SELECCION DE NIVEL -->
+    <!-- ============================================ -->
+    <div id="screen-levels" class="screen">
+        <div class="levels-container">
+            <h2 class="section-title">Selecciona un Nivel</h2>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="global-progress"></div>
+                <span class="progress-text" id="progress-text">0/6 Niveles</span>
+            </div>
+            <div class="score-display">
+                Puntuacion: <span id="total-score">0</span> puntos
+            </div>
+            <div class="levels-grid" id="levels-grid">
+                <!-- Los niveles se generan dinamicamente -->
+            </div>
+            <button class="btn-secondary btn-back" onclick="Game.showWelcome()">Volver al Inicio</button>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- PANTALLA DE JUEGO (GENERICA PARA TODOS LOS NIVELES) -->
+    <!-- ============================================ -->
+    <div id="screen-game" class="screen">
+        <div class="game-container">
+            <div class="game-header">
+                <button class="btn-icon btn-back-game" onclick="Game.backToLevels()">Volver</button>
+                <div class="level-info">
+                    <span class="level-badge" id="current-level-badge">Nivel 1</span>
+                    <span class="level-name" id="current-level-name">Multiplicaciones</span>
+                </div>
+                <div class="game-stats">
+                    <span class="stat">Puntos: <strong id="level-score">0</strong></span>
+                    <span class="stat">Pregunta: <strong id="question-counter">1/5</strong></span>
+                </div>
+            </div>
+            <div class="game-content" id="game-content">
+                <!-- El contenido del nivel se genera dinamicamente -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- PANTALLA DE NIVEL COMPLETADO -->
+    <!-- ============================================ -->
+    <div id="screen-level-complete" class="screen">
+        <div class="level-complete-container">
+            <div class="medal-animation" id="medal-animation">
+                <div class="medal">
+                    <div class="medal-icon">&#127942;</div>
+                </div>
+            </div>
+            <h2 class="congrats-title">Nivel Completado!</h2>
+            <p class="congrats-text" id="level-complete-text"></p>
+            <div class="level-results">
+                <div class="result-item">
+                    <span class="result-label">Respuestas Correctas:</span>
+                    <span class="result-value" id="correct-answers">0/5</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Puntos Ganados:</span>
+                    <span class="result-value" id="points-earned">0</span>
+                </div>
+            </div>
+            <button class="btn-primary" onclick="Game.backToLevels()">Continuar</button>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- PANTALLA FINAL -->
+    <!-- ============================================ -->
+    <div id="screen-final" class="screen">
+        <div class="final-container">
+            <canvas id="confetti-canvas"></canvas>
+            <h1 class="final-title">Felicitaciones, Valery!</h1>
+            <div class="final-avatar">
+                <div class="avatar happy">
+                    <div class="avatar-face">
+                        <div class="avatar-hair"></div>
+                        <div class="avatar-eyes">
+                            <div class="eye left happy-eye"></div>
+                            <div class="eye right happy-eye"></div>
+                        </div>
+                        <div class="avatar-mouth happy-mouth"></div>
+                    </div>
+                </div>
+            </div>
+            <p class="final-text">
+                Has superado todos los niveles! Estas lista para obtener un super
+                <span class="score-good big">5.0</span> en tu examen de matematicas!
+            </p>
+            <div class="medals-collection" id="medals-collection">
+                <!-- Medallas generadas dinamicamente -->
+            </div>
+            <div class="final-score">
+                Puntuacion Total: <span id="final-total-score">0</span> puntos
+            </div>
+            <button class="btn-primary btn-restart" onclick="Game.restart()">Jugar de Nuevo</button>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- FEEDBACK FLOTANTE -->
+    <!-- ============================================ -->
+    <div id="feedback-overlay" class="feedback-overlay hidden">
+        <div class="feedback-content" id="feedback-content">
+            <div class="feedback-icon" id="feedback-icon"></div>
+            <p class="feedback-text" id="feedback-text"></p>
+            <p class="feedback-hint" id="feedback-hint"></p>
+            <button class="btn-primary btn-next" id="feedback-btn" onclick="Game.nextQuestion()">Siguiente</button>
+        </div>
+    </div>
+
+    <!-- Audio elements for sound effects -->
+    <audio id="sound-correct" preload="auto">
+        <source src="data:audio/wav;base64,UklGRl9vT19teleXByZXNzT24..." type="audio/wav">
+    </audio>
+    <audio id="sound-incorrect" preload="auto">
+        <source src="data:audio/wav;base64,UklGRl9vT19teleXByZXNzT24..." type="audio/wav">
+    </audio>
+
+    <script src="js/game-engine.js"></script>
+    <script src="js/levels.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
