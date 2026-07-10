@@ -1,49 +1,43 @@
-# El Gran Desafio Matematico de Valery
+# 🔢 Valery - Misión Matemáticas
 
-Un juego educativo interactivo en HTML5, CSS3 y JavaScript diseñado para ayudar a Valery Anahy Tellez a repasar y recuperar su nota de matematicas de cuarto grado.
+Juego educativo interactivo estilo **Duolingo** para ayudar a Valery a repasar y recuperar su nota de matemáticas de 4º grado. Pasa de un **1.0** a un súper **5.0** completando 6 niveles. 🚀
 
-## Como Jugar
+## 🎮 Cómo jugar
 
-1. Abre `index.html` en un navegador web moderno
-2. Haz clic en "Comenzar Aventura"
-3. Completa los 6 niveles en orden
-4. Gana medallas y alcanza la nota de 5.0!
+1. Abre `index.html` en cualquier navegador moderno (o entra por GitHub Pages).
+2. Sube por el **mapa de niveles** (tipo Duolingo). Cada nivel se desbloquea al completar el anterior.
+3. Responde las preguntas, gana ⭐ estrellas, 🏆 puntos y 💎 gemas, y mantén tu 🔥 racha.
+4. Canjea tus premios en la **Tienda**: fondos, personajes, calcomanías y títulos.
 
-## Niveles
+## ✨ Características
 
-| Nivel | Tema | Mecanica |
+- **Mapa de niveles tipo Duolingo** con nodos, camino y medallas (🥇🥈🥉).
+- **Mascota interactiva** (🦉 y más) que reacciona, habla y anima.
+- **Economía de recompensas:** estrellas, puntos, gemas, rachas con bonus.
+- **Tienda canjeable:** fondos, personajes, calcomanías y títulos.
+- **Explicaciones didácticas** con reglas y ejemplos en cada pregunta.
+- **Confeti, sonidos y música** (Web Audio API), y selector de tipo de letra.
+- **Guardar/cargar progreso** por código para pasarlo a otro aparato.
+- Diseño **responsive** y amigable para niños.
+
+## 📚 Los 6 niveles
+
+| Nivel | Tema | Contexto |
 |-------|------|----------|
-| 1 | Multiplicaciones Abreviadas | Multiplicar por 10, 100, 1000 |
-| 2 | Divisiones Simples | Dividir con y sin residuo |
-| 3 | Operaciones Combinadas | Orden de operaciones (PEMDAS) |
-| 4 | Divisores, M.C.M. y M.C.D. | Seleccionar divisores y calcular |
-| 5 | Geometria y Medicion | Perimetro, area, tiempo y relojes |
-| 6 | Estadistica | Tablas de frecuencia y graficos |
+| 1 🛒 | Multiplicaciones abreviadas (×10, ×100, ×1000) | La tienda |
+| 2 🍬 | Divisiones simples (con y sin residuo) | Reparto de caramelos |
+| 3 🏭 | Operaciones combinadas (orden de operaciones) | La fábrica |
+| 4 📚 | Divisores, M.C.M. y M.C.D. | Biblioteca de números |
+| 5 🔬 | Geometría, medición y lectura de relojes | Laboratorio |
+| 6 🌾 | Estadística (frecuencias y gráficos) | La granja |
 
-## Estructura del Proyecto
+## 📁 Estructura
 
 ```
 matematicas-/
-├── index.html          # Pagina principal del juego
-├── css/
-│   └── styles.css      # Estilos visuales
-├── js/
-│   ├── game-engine.js  # Motor del juego (estado, navegacion, puntuacion)
-│   ├── levels.js       # Datos y renderizado de los 6 niveles
-│   └── main.js         # Controlador principal y handlers de eventos
-└── README.md           # Este archivo
+├── index.html   # Estructura y estilos del juego
+├── game.js      # Toda la lógica: preguntas, recompensas, tienda, mascota
+└── README.md
 ```
 
-## Caracteristicas
-
-- Diseño responsive para tablet y movil
-- Sonidos de feedback (correcto/incorrecto)
-- Sistema de puntuacion y medallas
-- Progreso guardado en localStorage
-- Animacion de confeti al completar todos los niveles
-- Interfaz amigable para niños
-
-## Requisitos
-
-- Navegador web moderno (Chrome, Firefox, Safari, Edge)
-- No requiere servidor ni instalacion
+No requiere servidor ni instalación: es HTML, CSS y JavaScript puro.
