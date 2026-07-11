@@ -669,27 +669,50 @@ function toggleSound() {
     else if (typeof window !== 'undefined' && 'speechSynthesis' in window) { try { window.speechSynthesis.cancel(); } catch(e){} }
 }
 
-/* ============ MÚSICA ============ */
+/* ============ MÚSICA: "La Primavera" de Vivaldi (dominio público) ============
+   Tema principal de "Las Cuatro Estaciones", La Primavera (Spring),
+   Op. 8 n.º 1, RV 269, en Mi mayor. Cada nota: [frecuencia Hz, duración ms]; 0 = silencio. */
 let musicTimer = null;
-const melody = [523,523,587,659,659,587,523,494,440,440,494,523,523,494,494,0];
 let melodyIndex = 0;
+const N = {
+    R:0, E5:659.25, Fs5:739.99, Gs5:830.61, A5:880.00, As5:932.33,
+    B5:987.77, Cs6:1108.73, Ds6:1244.51, E6:1318.51, Fs6:1479.98, B4:493.88
+};
+const springMelody = [
+    /* Frase A (tutti) */
+    [N.E5,300],[N.E5,300],[N.E5,300],[N.Gs5,440],
+    [N.B5,300],[N.B5,300],[N.B5,300],[N.Gs5,440],
+    [N.E5,300],[N.E5,300],[N.E5,300],[N.Gs5,300],[N.Fs5,560],[N.R,140],
+    /* Frase A (eco) */
+    [N.E5,300],[N.E5,300],[N.E5,300],[N.Gs5,440],
+    [N.B5,300],[N.B5,300],[N.B5,300],[N.Gs5,440],
+    [N.E5,300],[N.E5,300],[N.E5,300],[N.Gs5,300],[N.Fs5,560],[N.R,140],
+    /* Frase B (giro y cadencia) */
+    [N.B5,300],[N.Cs6,300],[N.B5,300],[N.As5,300],[N.B5,440],[N.Fs5,440],
+    [N.Gs5,300],[N.A5,300],[N.B5,300],[N.Gs5,560],[N.E5,560],[N.R,260]
+];
 function playMelodyNote() {
     if (!musicOn) return;
+    const note = springMelody[melodyIndex];
+    const freq = note[0], dur = note[1];
     try {
-        const ctx = getCtx(); const freq = melody[melodyIndex];
         if (freq > 0) {
+            const ctx = getCtx();
             const osc = ctx.createOscillator(); const gain = ctx.createGain();
             osc.type = 'triangle'; osc.frequency.value = freq;
-            gain.gain.setValueAtTime(0.05, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.32);
+            const t = ctx.currentTime;
+            gain.gain.setValueAtTime(0.0001, t);
+            gain.gain.exponentialRampToValueAtTime(0.05, t + 0.03);          // ataque suave (violín)
+            gain.gain.exponentialRampToValueAtTime(0.0001, t + dur / 1000);  // liberación
             osc.connect(gain); gain.connect(ctx.destination);
-            osc.start(); osc.stop(ctx.currentTime + 0.34);
+            osc.start(t); osc.stop(t + dur / 1000 + 0.05);
         }
-        melodyIndex = (melodyIndex + 1) % melody.length;
     } catch(e){}
+    melodyIndex = (melodyIndex + 1) % springMelody.length;
+    musicTimer = setTimeout(playMelodyNote, dur);   // siguiente nota según su duración
 }
-function startMusic(){ getCtx(); if (musicTimer) clearInterval(musicTimer); musicTimer = setInterval(playMelodyNote, 320); }
-function stopMusic(){ if (musicTimer) { clearInterval(musicTimer); musicTimer = null; } }
+function startMusic(){ getCtx(); if (musicTimer) clearTimeout(musicTimer); melodyIndex = 0; playMelodyNote(); }
+function stopMusic(){ if (musicTimer) { clearTimeout(musicTimer); musicTimer = null; } }
 function toggleMusic() {
     musicOn = !musicOn;
     document.getElementById('music-toggle').classList.toggle('off', !musicOn);
