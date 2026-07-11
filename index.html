@@ -104,6 +104,8 @@
         }
         .ctrl-btn:hover { transform: scale(1.1); } .ctrl-btn:active { transform: scale(0.95); }
         .ctrl-btn.off { background: #ddd; border-color: #999; opacity: 0.7; }
+        /* Reproductor de música (YouTube) fuera de pantalla: se oye pero no se ve */
+        #yt-player-wrap { position: fixed; left: -9999px; top: 0; width: 320px; height: 180px; pointer-events: none; }
 
         /* ===== MAPA DE NIVELES TIPO DUOLINGO ===== */
         #player-title { display:none; background:#FFF8DC; border:2px solid #FFD700; border-radius:20px;
@@ -384,6 +386,8 @@
     </style>
 </head>
 <body>
+    <!-- Reproductor de YouTube para la música de fondo (fuera de pantalla; audio del video oficial) -->
+    <div id="yt-player-wrap" aria-hidden="true"><div id="yt-player"></div></div>
     <div id="buddy-bubble"></div>
     <div id="buddy" onclick="buddyReact()" title="¡Tócame para jugar!">🦉</div>
     <div id="game-container">
