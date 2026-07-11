@@ -713,10 +713,51 @@ function playMelodyNote() {
 }
 function startMusic(){ getCtx(); if (musicTimer) clearTimeout(musicTimer); melodyIndex = 0; playMelodyNote(); }
 function stopMusic(){ if (musicTimer) { clearTimeout(musicTimer); musicTimer = null; } }
+
+/* ============ MÚSICA DE FONDO: video de YouTube (reproductor oficial incrustado) ============
+   Reproduce el audio del video pedido directamente desde YouTube (sin descargarlo),
+   usando la IFrame API oficial. Si el video no permite incrustarse o no hay internet,
+   se usa como respaldo el tema de Vivaldi generado localmente. */
+const MUSIC_VIDEO_ID = 'k_Y-9lgYID8';
+let ytPlayer = null, ytReady = false, ytPending = false;
+function loadYouTubeMusic() {
+    try {
+        if (typeof window === 'undefined') return;
+        if (window.YT && window.YT.Player) { createYtPlayer(); return; }
+        if (!document.getElementById('yt-iframe-api')) {
+            const tag = document.createElement('script');
+            tag.id = 'yt-iframe-api';
+            tag.src = 'https://www.youtube.com/iframe_api';
+            (document.head || document.body).appendChild(tag);
+        }
+        window.onYouTubeIframeAPIReady = createYtPlayer;
+    } catch (e) {}
+}
+function createYtPlayer() {
+    try {
+        if (ytPlayer || !window.YT || !window.YT.Player) return;
+        ytPlayer = new window.YT.Player('yt-player', {
+            videoId: MUSIC_VIDEO_ID,
+            playerVars: { autoplay: 0, controls: 0, loop: 1, playlist: MUSIC_VIDEO_ID, playsinline: 1, rel: 0, modestbranding: 1 },
+            events: {
+                onReady: () => { ytReady = true; if (ytPending) { ytPending = false; playYtMusic(); } },
+                onStateChange: (e) => { if (window.YT && window.YT.PlayerState && e.data === window.YT.PlayerState.ENDED) { try { ytPlayer.seekTo(0); ytPlayer.playVideo(); } catch (err) {} } },
+                onError: () => { ytReady = false; if (musicOn) startMusic(); }  // respaldo: Vivaldi
+            }
+        });
+    } catch (e) { if (musicOn) startMusic(); }
+}
+function playYtMusic() {
+    if (ytReady && ytPlayer) { try { ytPlayer.unMute(); ytPlayer.setVolume(45); ytPlayer.playVideo(); } catch (e) { startMusic(); } }
+    else { ytPending = true; loadYouTubeMusic(); }
+}
+function pauseYtMusic() { ytPending = false; if (ytReady && ytPlayer) { try { ytPlayer.pauseVideo(); } catch (e) {} } }
+
 function toggleMusic() {
     musicOn = !musicOn;
     document.getElementById('music-toggle').classList.toggle('off', !musicOn);
-    if (musicOn) { playClick(); startMusic(); } else { stopMusic(); }
+    if (musicOn) { playClick(); playYtMusic(); }
+    else { pauseYtMusic(); stopMusic(); }
 }
 
 /* ============ CONFETI Y POPUPS ============ */
@@ -1652,6 +1693,7 @@ function cycleFont() {
 /* ============ INICIALIZACIÓN ============ */
 function init() {
     applyFont(lsGet('vmFont', fontList[0].css));
+    loadYouTubeMusic();   // prepara el reproductor de YouTube para la música de fondo
     applyEquip();
     renderMap();
     refreshStartHud();
