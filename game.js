@@ -864,6 +864,10 @@ function showQuestion() {
     document.getElementById('next-btn').classList.add('hidden');
     document.getElementById('question-text').innerHTML = q.q;
 
+    // Panel visual didáctico según el tipo de pregunta
+    const vizEl = document.getElementById('question-visual');
+    if (vizEl) vizEl.innerHTML = buildQuestionVisual(q);
+
     const already = answers[currentQ];
     const optsDiv = document.getElementById('options');
     let html = '';
@@ -893,6 +897,168 @@ function updateHintButton() {
     hintBtn.innerText = '💡 Pista (' + hintsLeft + ')';
     // Se desactiva si: ya respondió, ya usó pista en esta pregunta, o no quedan pistas
     hintBtn.disabled = !!answers[currentQ] || !!hintUsed[currentQ] || hintsLeft <= 0;
+}
+
+/* ============ VISUALES DIDÁCTICOS DE CADA PREGUNTA ============
+   Dibuja una ayuda visual (sin dar la respuesta) según el nivel/tema. */
+function buildQuestionVisual(q) {
+    let html = '';
+    try {
+        switch (q.level) {
+            case 1: html = vizMultiplication(q.q); break;
+            case 2: html = vizDivision(q.q); break;
+            case 3: html = vizOperation(q.q); break;
+            case 4: html = vizLibrary(q.q); break;
+            case 5: html = vizGeometry(q.q); break;
+            case 6: html = vizStats(); break;
+        }
+    } catch (e) { html = ''; }
+    if (!html && q.scene) html = `<div class="viz"><div class="viz-emojis">${q.scene}</div></div>`;
+    return html;
+}
+
+/* Nivel 1: fichas de ceros para multiplicar por 10/100/1000 */
+function vizMultiplication(text) {
+    const m = text.match(/([\d.]+)\s*[×x]\s*(\d+)/);
+    if (!m) return '';
+    const num = m[1], mult = m[2];
+    const zeros = (mult.match(/0/g) || []).length;
+    let chips = '';
+    for (let i = 0; i < zeros; i++) chips += '<span class="zero-chip">0</span>';
+    return `<div class="viz"><div class="viz-title">🛒 ¿Cuántos ceros hay que agregar?</div>
+        <div><span class="viz-num">${num}</span> <span style="font-size:1.4em">× ${mult} ➡️</span> ${chips}</div>
+        <div class="op-hint">Multiplicar por ${mult} = agregar <b>${zeros}</b> cero(s) al final.</div></div>`;
+}
+
+/* Nivel 2: caramelos y grupos para repartir */
+function vizDivision(text) {
+    const m = text.match(/(\d+)\s*÷\s*(\d+)/);
+    if (!m) return '';
+    const total = +m[1], groups = +m[2];
+    const show = Math.min(total, 20);
+    let candies = '';
+    for (let i = 0; i < show; i++) candies += '🍬';
+    if (total > show) candies += ' …';
+    let jars = '';
+    for (let i = 0; i < groups; i++) jars += '🫙';
+    return `<div class="viz"><div class="viz-title">🍬 Reparte ${total} caramelos en ${groups} grupos iguales</div>
+        <div class="viz-emojis">${candies}</div>
+        <div style="font-size:1.9em;margin-top:6px;">${jars}</div>
+        <div class="op-hint">¿Cuántos caramelos le tocan a cada grupo?</div></div>`;
+}
+
+/* Nivel 3: resalta las multiplicaciones (se hacen primero) */
+function vizOperation(text) {
+    const idx = text.indexOf('Resuelve:');
+    if (idx < 0) return '';
+    const expr = text.slice(idx + 'Resuelve:'.length).trim();
+    const hl = expr.replace(/(\d+)\s*×\s*(\d+)/g, '<span class="op-mult">$1 × $2</span>');
+    return `<div class="viz"><div class="viz-title">🏭 Primero resuelve lo resaltado (las ×)</div>
+        <div class="op-expr">${hl}</div>
+        <div class="op-hint">Haz primero las multiplicaciones; luego suma y resta de izquierda a derecha.</div></div>`;
+}
+
+/* Nivel 4: biblioteca de números (divisores, MCM, MCD) */
+function vizLibrary(text) {
+    let m = text.match(/divisores de (\d+)/i);
+    if (m) return `<div class="viz"><div class="viz-title">📚 Divisores de ${m[1]}</div>
+        <div class="viz-num" style="font-size:2.2em">📖 ${m[1]}</div>
+        <div class="op-hint">Un divisor divide exacto, sin que sobre nada.</div></div>`;
+    m = text.match(/\((\d+)[,\s]+(\d+)\)/);
+    const isMCM = /M\.?\s*C\.?\s*M/i.test(text);
+    if (m) return `<div class="viz"><div class="viz-title">📚 ${isMCM ? 'Mínimo Común Múltiplo' : 'Máximo Común Divisor'}</div>
+        <div style="font-size:1.9em">📗 <b>${m[1]}</b> &nbsp;&nbsp; 📘 <b>${m[2]}</b></div>
+        <div class="op-hint">${isMCM ? 'El menor número que es múltiplo de los dos.' : 'El mayor número que divide a los dos.'}</div></div>`;
+    return '';
+}
+
+/* Nivel 5: figuras y relojes dibujados en SVG */
+function vizGeometry(text) {
+    let m = text.match(/cuadrado de (\d+)/i);
+    if (m) return vizSquare(+m[1]);
+    m = text.match(/base (\d+).*altura (\d+)/i);
+    if (m) return vizTriangleArea(+m[1], +m[2]);
+    m = text.match(/(\d+),\s*(\d+)\s*y\s*(\d+)\s*cm/i);
+    if (m) return vizTrianglePerim(+m[1], +m[2], +m[3]);
+    m = text.match(/corta en el (\d+)/i);
+    if (m) return vizClock(+m[1], 0);
+    if (/1 d[ií]a/i.test(text)) return vizTime('🌞🌙', '1 día = ¿? horas');
+    if (/1 semana/i.test(text)) return vizTime('📆', '1 semana = ¿? días');
+    if (/1 año/i.test(text)) return vizTime('🗓️', '1 año = ¿? meses');
+    if (/1 d[ée]cada/i.test(text)) return vizTime('🔟 🗓️', '1 década = ¿? años');
+    if (/1 siglo/i.test(text)) return vizTime('💯 🕰️', '1 siglo = ¿? años');
+    return '';
+}
+function vizSquare(side) {
+    return `<div class="viz"><div class="viz-title">🔬 Cuadrado de ${side} cm por lado</div>
+    <svg viewBox="0 0 170 150" width="200">
+      <rect x="35" y="20" width="100" height="100" fill="#A0E7E5" stroke="#0ABDE3" stroke-width="4"/>
+      <text x="85" y="14" text-anchor="middle" font-size="13" fill="#333">${side} cm</text>
+      <text x="85" y="140" text-anchor="middle" font-size="13" fill="#333">${side} cm</text>
+      <text x="22" y="74" text-anchor="middle" font-size="13" fill="#333" transform="rotate(-90 22 74)">${side} cm</text>
+      <text x="150" y="74" text-anchor="middle" font-size="13" fill="#333" transform="rotate(90 150 74)">${side} cm</text>
+    </svg>
+    <div class="op-hint">Perímetro = suma de los 4 lados (4 × lado).</div></div>`;
+}
+function vizTrianglePerim(a, b, c) {
+    return `<div class="viz"><div class="viz-title">🔬 Triángulo de lados ${a}, ${b} y ${c} cm</div>
+    <svg viewBox="0 0 180 140" width="220">
+      <polygon points="90,15 20,120 160,120" fill="#FDCB6E" stroke="#E17055" stroke-width="4"/>
+      <text x="40" y="65" font-size="13" fill="#333">${a} cm</text>
+      <text x="120" y="65" font-size="13" fill="#333">${b} cm</text>
+      <text x="90" y="135" text-anchor="middle" font-size="13" fill="#333">${c} cm</text>
+    </svg>
+    <div class="op-hint">Perímetro = suma de los tres lados.</div></div>`;
+}
+function vizTriangleArea(base, height) {
+    return `<div class="viz"><div class="viz-title">🔬 Triángulo: base ${base} cm, altura ${height} cm</div>
+    <svg viewBox="0 0 180 140" width="220">
+      <polygon points="90,15 20,120 160,120" fill="#A0E7E5" stroke="#0ABDE3" stroke-width="4"/>
+      <line x1="90" y1="15" x2="90" y2="120" stroke="#E17055" stroke-width="2" stroke-dasharray="5,4"/>
+      <text x="96" y="72" font-size="12" fill="#E17055">altura ${height}</text>
+      <text x="90" y="135" text-anchor="middle" font-size="13" fill="#333">base ${base} cm</text>
+    </svg>
+    <div class="op-hint">Área = (base × altura) ÷ 2.</div></div>`;
+}
+function vizClock(h, m) {
+    const cx = 75, cy = 75;
+    const hourAng = (((h % 12) + m / 60) * 30 - 90) * Math.PI / 180;
+    const minAng = ((m * 6) - 90) * Math.PI / 180;
+    const hx = cx + 32 * Math.cos(hourAng), hy = cy + 32 * Math.sin(hourAng);
+    const mx = cx + 48 * Math.cos(minAng), my = cy + 48 * Math.sin(minAng);
+    let ticks = '';
+    for (let i = 0; i < 12; i++) {
+        const a = (i * 30 - 90) * Math.PI / 180;
+        ticks += `<line x1="${(cx+58*Math.cos(a)).toFixed(1)}" y1="${(cy+58*Math.sin(a)).toFixed(1)}" x2="${(cx+51*Math.cos(a)).toFixed(1)}" y2="${(cy+51*Math.sin(a)).toFixed(1)}" stroke="#333" stroke-width="2"/>`;
+    }
+    return `<div class="viz"><div class="viz-title">🕐 ¿Qué hora marca el reloj?</div>
+    <svg viewBox="0 0 150 150" width="170">
+      <circle cx="75" cy="75" r="62" fill="#fff" stroke="#333" stroke-width="4"/>
+      ${ticks}
+      <line x1="75" y1="75" x2="${hx.toFixed(1)}" y2="${hy.toFixed(1)}" stroke="#333" stroke-width="5" stroke-linecap="round"/>
+      <line x1="75" y1="75" x2="${mx.toFixed(1)}" y2="${my.toFixed(1)}" stroke="#EE5253" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="75" cy="75" r="4" fill="#0ABDE3"/>
+    </svg>
+    <div class="op-hint">La aguja corta marca la hora; la larga, los minutos.</div></div>`;
+}
+function vizTime(emoji, label) {
+    return `<div class="viz"><div class="viz-title">⏳ Equivalencias de tiempo</div>
+      <div style="font-size:3em">${emoji}</div>
+      <div class="viz-eq big">${label}</div></div>`;
+}
+
+/* Nivel 6: gráfico de barras real de la granja */
+function vizStats() {
+    const data = [['🥔',30,'#FF9F43'],['🥕',25,'#EE5253'],['🍅',40,'#e74c3c'],['🍆',55,'#5F27CD'],['🎃',20,'#10AC84']];
+    const max = 55, H = 120;
+    let bars = '';
+    data.forEach(d => {
+        const h = Math.max(6, Math.round(d[1] / max * H));
+        bars += `<div class="barcol"><div class="bar-val">${d[1]}</div><div class="bar" style="height:${h}px;background:${d[2]}"></div><div class="bar-lbl">${d[0]}</div></div>`;
+    });
+    return `<div class="viz"><div class="viz-title">🌾 Diagrama de barras de la granja</div>
+      <div class="barchart">${bars}</div>
+      <div class="op-hint">🥔 30 · 🥕 25 · 🍅 40 · 🍆 55 · 🎃 20</div></div>`;
 }
 
 /* Pista 50/50: elimina una opción incorrecta. Máximo 5 por nivel, una por pregunta. */
