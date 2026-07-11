@@ -151,6 +151,49 @@
         .hint-btn { background:#FFD700; color:#8A2BE2; box-shadow:0 4px 0 #DAA520; }
         .hint-btn:hover:not(:disabled) { background:#FFE44D; }
 
+        /* ===== MINI-JUEGOS INTERACTIVOS ===== */
+        #minigames-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:10px 0 4px; }
+        .mg-card { border:3px solid #FFD700; border-radius:16px; padding:14px 8px; background:#FFFDF5;
+            cursor:pointer; transition:transform 0.12s, box-shadow 0.12s; }
+        .mg-card:hover { transform:translateY(-4px); box-shadow:0 8px 18px rgba(0,0,0,0.15); }
+        .mg-card:active { transform:translateY(0); }
+        .mg-card .mg-emoji { font-size:2.6em; }
+        .mg-card .mg-name { font-weight:bold; color:#333; margin-top:4px; }
+        .mg-card .mg-tag { font-size:0.78em; color:#EE5253; font-weight:bold; }
+        .mg-card .node-medal { font-size:1.1em; }
+
+        #mg-area { margin: 10px auto; max-width: 500px; }
+        /* Caramelos y platos (división) */
+        .candy-pile { min-height:56px; background:#FFF8DC; border:2px dashed #FFA500; border-radius:12px;
+            padding:8px; font-size:1.7em; line-height:1.4; margin:8px 0; }
+        .plates-row { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin:10px 0; }
+        .plate { background:#fff; border:3px solid #0ABDE3; border-radius:50% 50% 12px 12px; min-width:74px; min-height:74px;
+            padding:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+        .plate .plate-candies { font-size:1.2em; line-height:1.1; }
+        .plate .plate-count { font-weight:bold; color:#0ABDE3; font-size:0.85em; margin-top:2px; }
+        .leftover { background:#FFE0E0; border:2px dashed #EE5253; border-radius:12px; padding:6px 10px; display:inline-block; margin-top:6px; font-weight:bold; color:#EE5253; }
+        /* Máquina de ceros (multiplicación) */
+        .zero-machine { font-size:2em; font-weight:bold; color:#1E90FF; background:#EAF4FF; border:3px solid #1E90FF;
+            border-radius:12px; padding:12px; margin:10px 0; min-height:56px; word-break:break-all; }
+        .zero-tray { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:8px 0; }
+        .zero-drag { background:#FFD24C; color:#7a4a00; font-weight:bold; border-radius:50%; width:52px; height:52px;
+            line-height:52px; text-align:center; box-shadow:0 4px 0 #E0A800; cursor:pointer; font-size:1.3em; user-select:none;
+            transition:transform 0.1s; }
+        .zero-drag:active { transform:translateY(4px); box-shadow:0 0 0 #E0A800; }
+        /* Escalera de múltiplos (MCM) / factores (MCD) */
+        .mult-cols { display:flex; gap:16px; justify-content:center; }
+        .mult-col { flex:1; max-width:180px; }
+        .mult-col h4 { margin:4px 0; color:#5F27CD; }
+        .mult-step { background:#fff; border:2px solid #ddd; border-radius:10px; padding:8px; margin:5px 0; font-weight:bold; font-size:1.1em; }
+        .mult-step.common { background:#FFF3B0; border-color:#FF8C00; color:#B8860B; animation: goldenGlow 1.5s ease-in-out infinite; }
+        .num-tiles { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:10px 0; }
+        .num-tile { background:#6C5CE7; color:#fff; border:none; border-radius:12px; min-width:52px; padding:12px 10px;
+            font-size:1.3em; font-weight:bold; cursor:pointer; font-family:var(--game-font); box-shadow:0 4px 0 #4b3fb0; }
+        .num-tile:hover { background:#8577F0; }
+        .num-tile:active { transform:translateY(4px); box-shadow:0 0 0; }
+        .num-tile.picked { background:#0ABDE3; box-shadow:0 4px 0 #0891b2; }
+        .mg-progress { font-size:0.9em; color:#666; margin:6px 0; }
+
         /* ===== PANEL VISUAL DIDÁCTICO DE LAS PREGUNTAS ===== */
         #question-visual { margin: 6px auto 14px; }
         .viz {
@@ -338,6 +381,9 @@
             </div>
             <div id="grade-meter"></div>
             <div id="level-map"></div>
+            <h2 class="shop-section-title" style="color:#EE5253;">🎮 Juegos Interactivos</h2>
+            <p style="color:#555; margin-top:0;">¡Juega y aprende tocando y arrastrando! Del taller de recuperación de Valery. ✏️</p>
+            <div id="minigames-grid"></div>
             <button class="btn btn-shop" onclick="openShop()">🛒 Tienda de Recompensas (<span id="start-gems">0</span> 💎)</button>
             <button class="btn btn-progress" onclick="openProgress()">💾 Mi Progreso (pasar a otro aparato)</button>
             <div id="font-picker-wrap">
@@ -417,6 +463,25 @@
             <p id="end-message" style="font-size: 1.3em; color: #555;"></p>
             <button class="btn" onclick="goMenu()">🗺️ Volver al mapa</button>
             <button class="btn btn-shop" onclick="openShop()">🛒 Ir a la Tienda</button>
+        </div>
+
+        <!-- PANTALLA DE MINI-JUEGO INTERACTIVO -->
+        <div id="minigame-screen" class="hidden">
+            <div id="game-nav">
+                <button class="nav-btn home" onclick="goMenu()">🏠 Menú</button>
+                <button class="nav-btn" onclick="mgRestart()">🔄 Reiniciar</button>
+            </div>
+            <div id="score-display">
+                <span>⭐ <span id="mg-stars">0</span></span>
+                <span id="points-badge">🏆 <span id="mg-points">0</span></span>
+                <span id="gems-badge">💎 <span id="mg-gems">0</span></span>
+                <span class="streak-fire">🎯 <span id="mg-round">1</span></span>
+            </div>
+            <h2 id="mg-title" style="color:#6C5CE7; margin:6px 0;">Mini-juego</h2>
+            <p id="mg-instructions" style="color:#555; margin:4px 0;"></p>
+            <div id="mg-area"></div>
+            <div id="mg-feedback" style="font-size:1.4em; font-weight:bold; min-height:32px; margin:10px 0;"></div>
+            <div id="mg-controls"></div>
         </div>
     </div>
     <!-- Certificado de premio (se muestra al redimir) -->

@@ -822,7 +822,7 @@ function shuffle(arr) {
     return a;
 }
 function showScreen(id) {
-    ['start-screen','progress-screen','shop-screen','game-screen','end-screen'].forEach(s => {
+    ['start-screen','progress-screen','shop-screen','game-screen','end-screen','minigame-screen'].forEach(s => {
         document.getElementById(s).classList.add('hidden');
     });
     document.getElementById(id).classList.remove('hidden');
@@ -1189,7 +1189,7 @@ function goForward() { playClick(); if (answers[currentQ] && currentQ < question
 function goMenu() {
     playClick();
     showScreen('start-screen');
-    renderMap(); refreshStartHud(); applyEquip();
+    renderMap(); refreshStartHud(); applyEquip(); renderMinigames();
 }
 
 function endLevel() {
@@ -1460,6 +1460,7 @@ function init() {
     applyEquip();
     renderMap();
     refreshStartHud();
+    renderMinigames();
     renderFontPicker();
     // Desbloquear audio en el primer gesto del usuario (móviles/navegadores lo exigen)
     document.addEventListener('pointerdown', unlockAudio, { once: true });
@@ -1468,3 +1469,264 @@ function init() {
     setTimeout(() => showBuddyBubble('¡Hola Valery! Toca un nivel para empezar. 🚀'), 800);
 }
 document.addEventListener('DOMContentLoaded', init);
+
+
+
+/* =====================================================
+   MINI-JUEGOS INTERACTIVOS (basados en el taller de recuperación)
+   ===================================================== */
+const minigamesData = [
+    { id:'division', emoji:'🍬', name:'Reparto de Caramelos', tag:'Divisiones (2,3,4,5,6)' },
+    { id:'zeros',    emoji:'0️⃣', name:'Máquina de Ceros',      tag:'× 10, 100, 1000' },
+    { id:'mcm',      emoji:'🪜', name:'Escalera de Múltiplos',  tag:'M.C.M.' }
+];
+function getMgDone() { try { return JSON.parse(lsGet('vmMgDone','{}')); } catch(e){ return {}; } }
+function setMgDone(id) { const d = getMgDone(); d[id] = true; lsSet('vmMgDone', JSON.stringify(d)); }
+function renderMinigames() {
+    const grid = document.getElementById('minigames-grid');
+    if (!grid) return;
+    const done = getMgDone();
+    grid.innerHTML = minigamesData.map(g => `
+        <div class="mg-card" onclick="openMinigame('${g.id}')">
+            <div class="mg-emoji">${g.emoji}</div>
+            <div class="mg-name">${g.name}</div>
+            <div class="mg-tag">${g.tag}</div>
+            ${done[g.id] ? '<div class="node-medal">🏅 ¡Completado!</div>' : ''}
+        </div>`).join('');
+}
+
+let mg = null; // estado del mini-juego actual
+function mgUpdateHud() {
+    document.getElementById('mg-stars').innerText = getStars();
+    document.getElementById('mg-points').innerText = getPoints();
+    document.getElementById('mg-gems').innerText = getGems();
+    document.getElementById('mg-round').innerText = mg ? mg.round : 1;
+}
+function openMinigame(id) {
+    playClick(); getCtx(); unlockAudio();
+    showScreen('minigame-screen');
+    if (id === 'division') mgDivisionStart();
+    else if (id === 'zeros') mgZerosStart();
+    else if (id === 'mcm') mgMcmStart();
+}
+function mgRestart() { if (mg) { playClick(); openMinigame(mg.id); } }
+function mgReward(points, gems) {
+    addPoints(points); addGems(gems); addStars(1);
+    mgUpdateHud(); showRewardPopup('+' + points + ' 🏆');
+}
+function mgNext() {
+    if (!mg) return;
+    if (mg.round >= mg.total) { setTimeout(mgComplete, 950); return; }
+    mg.round++; mgUpdateHud();
+    setTimeout(() => {
+        if (mg.id === 'division') mgDivisionRound();
+        else if (mg.id === 'zeros') mgZerosRound();
+        else if (mg.id === 'mcm') mgMcmRound();
+    }, 950);
+}
+function mgComplete() {
+    setMgDone(mg.id);
+    document.getElementById('mg-title').innerText = '🏅 ¡Juego Completado!';
+    document.getElementById('mg-instructions').innerText = '';
+    document.getElementById('mg-area').innerHTML =
+        `<div class="viz"><div style="font-size:3em">🏆</div>
+         <div style="font-size:1.3em;font-weight:bold;color:#10AC84;">¡Muy bien, Valery! Terminaste este juego.</div></div>`;
+    document.getElementById('mg-feedback').innerHTML = '';
+    document.getElementById('mg-controls').innerHTML =
+        `<button class="btn" onclick="goMenu()">🗺️ Volver al mapa</button>
+         <button class="btn" style="background:#EE5253;box-shadow:0 6px 0 #b83b3b;" onclick="mgRestart()">🔄 Jugar otra vez</button>`;
+    playWin(); launchConfetti(90); speak('¡Excelente, Valery!', { pitch: 1.15 });
+    renderMinigames();
+}
+function mgNumberOptions(correct, count) {
+    const set = new Set([correct]);
+    let guard = 0;
+    while (set.size < count && guard++ < 60) {
+        const cand = correct + (Math.floor(Math.random() * 5) - 2);
+        if (cand > 0 && cand !== correct) set.add(cand);
+    }
+    let n = 1;
+    while (set.size < count) { if (correct + n > 0) set.add(correct + n); n++; }
+    return shuffle([...set]);
+}
+
+
+
+/* ===== JUEGO 1: Reparto de Caramelos (División) ===== */
+function mgDivisionStart() {
+    mg = { id:'division', round:1, total:3 };
+    document.getElementById('mg-title').innerText = '🍬 Reparto de Caramelos';
+    mgUpdateHud();
+    mgDivisionRound();
+}
+function mgDivisionRound() {
+    const divisors = [2, 3, 4, 5, 6];              // números del taller
+    const divisor = divisors[Math.floor(Math.random() * divisors.length)];
+    const quotient = 2 + Math.floor(Math.random() * 8);
+    const remainder = Math.floor(Math.random() * divisor);
+    mg.divisor = divisor;
+    mg.quotient = quotient;
+    mg.remainder = remainder;
+    mg.dividend = divisor * quotient + remainder;
+    mg.plates = new Array(divisor).fill(0);
+    mg.pile = mg.dividend;
+    document.getElementById('mg-instructions').innerText =
+        `Reparte ${mg.dividend} caramelos entre ${divisor} platos. Toca "Repartir uno a cada plato".`;
+    document.getElementById('mg-feedback').innerHTML = '';
+    mgDivisionRender();
+}
+function mgDivisionRender() {
+    let pile = ''; const showP = Math.min(mg.pile, 30);
+    for (let i = 0; i < showP; i++) pile += '🍬';
+    if (mg.pile > showP) pile += ' …';
+    let plates = '';
+    mg.plates.forEach(c => {
+        let cs = ''; for (let i = 0; i < c; i++) cs += '🍬';
+        plates += `<div class="plate"><div class="plate-candies">${cs || '·'}</div><div class="plate-count">${c}</div></div>`;
+    });
+    const canDeal = mg.pile >= mg.divisor;
+    document.getElementById('mg-area').innerHTML = `
+        <div class="mg-progress">Ronda ${mg.round} de ${mg.total} · ${mg.dividend} ÷ ${mg.divisor}</div>
+        <div><b>Caramelos por repartir: ${mg.pile}</b></div>
+        <div class="candy-pile">${pile || '(vacío)'}</div>
+        <div class="plates-row">${plates}</div>
+        ${(mg.pile > 0 && !canDeal) ? `<div class="leftover">Sobran: ${mg.pile} 🍬</div>` : ''}`;
+    document.getElementById('mg-controls').innerHTML = canDeal
+        ? `<button class="btn" onclick="mgDivisionDeal()">🎁 Repartir uno a cada plato</button>`
+        : `<button class="btn" style="background:#10AC84;box-shadow:0 6px 0 #0a8f6d;" onclick="mgDivisionAsk()">✅ ¡Ya repartí!</button>`;
+}
+function mgDivisionDeal() {
+    if (mg.pile < mg.divisor) return;
+    for (let i = 0; i < mg.divisor; i++) mg.plates[i]++;
+    mg.pile -= mg.divisor;
+    playClick();
+    mgDivisionRender();
+}
+function mgDivisionAsk() {
+    playClick();
+    const opts = mgNumberOptions(mg.quotient, 3);
+    const tiles = opts.map(n => `<button class="num-tile" onclick="mgDivisionAnswer(${n})">${n}</button>`).join('');
+    document.getElementById('mg-instructions').innerText = '¿Cuántos caramelos le tocaron a CADA plato?';
+    document.getElementById('mg-controls').innerHTML = '';
+    document.getElementById('mg-area').innerHTML += `<div class="num-tiles">${tiles}</div>`;
+}
+function mgDivisionAnswer(n) {
+    const fb = document.getElementById('mg-feedback');
+    if (n === mg.quotient) {
+        fb.innerHTML = `<span style="color:#228B22;">¡Correcto! Cada plato: ${mg.quotient}${mg.remainder ? `, y sobran ${mg.remainder}` : ''} 🎉</span>`;
+        playCorrect(); launchConfetti(30); speak('¡Excelente, Valery!', { pitch: 1.15 }); buddyReact(false);
+        mgReward(10, 3); mgNext();
+    } else {
+        fb.innerHTML = `<span style="color:#EE5253;">¡Buuuh! Cuenta los caramelos de un solo plato. 👀</span>`;
+        playWrong(); speak('¡Buuuh!', { pitch: 0.7, rate: 0.85 });
+    }
+}
+
+
+
+/* ===== JUEGO 2: Máquina de Ceros (Multiplicación abreviada) ===== */
+function mgZerosStart() {
+    mg = { id:'zeros', round:1, total:5 };
+    document.getElementById('mg-title').innerText = '0️⃣ Máquina de Ceros';
+    mgUpdateHud();
+    mgZerosRound();
+}
+function mgZerosRound() {
+    const bases = [5, 12, 34, 7, 60, 125, 8, 9, 40, 3, 250, 46];
+    const mults = [10, 100, 1000];
+    mg.base = bases[Math.floor(Math.random() * bases.length)];
+    mg.mult = mults[Math.floor(Math.random() * mults.length)];
+    mg.needZeros = String(mg.mult).length - 1;
+    mg.added = 0;
+    document.getElementById('mg-instructions').innerText =
+        `Multiplica ${mg.base} × ${mg.mult}. Toca los ceros 🟡 para agregarlos al final del número.`;
+    document.getElementById('mg-feedback').innerHTML = '';
+    mgZerosRender();
+}
+function mgZerosRender() {
+    const display = String(mg.base) + '0'.repeat(mg.added);
+    document.getElementById('mg-area').innerHTML = `
+        <div class="mg-progress">Ronda ${mg.round} de ${mg.total}</div>
+        <div style="font-size:1.3em;">${mg.base} × ${mg.mult} =</div>
+        <div class="zero-machine">${display}</div>
+        <div class="zero-tray">
+            <div class="zero-drag" onclick="mgZerosAdd()">0</div>
+            <div class="zero-drag" onclick="mgZerosAdd()">0</div>
+            <div class="zero-drag" onclick="mgZerosAdd()">0</div>
+        </div>`;
+    document.getElementById('mg-controls').innerHTML =
+        `<button class="btn" style="background:#FF9F43;box-shadow:0 6px 0 #cc7d2f;" onclick="mgZerosRemove()">⬅️ Quitar cero</button>
+         <button class="btn" style="background:#10AC84;box-shadow:0 6px 0 #0a8f6d;" onclick="mgZerosCheck()">✅ ¡Listo!</button>`;
+}
+function mgZerosAdd() { mg.added++; playClick(); mgZerosRender(); }
+function mgZerosRemove() { if (mg.added > 0) { mg.added--; playClick(); mgZerosRender(); } }
+function mgZerosCheck() {
+    const fb = document.getElementById('mg-feedback');
+    if (mg.added === mg.needZeros) {
+        const result = mg.base * mg.mult;
+        fb.innerHTML = `<span style="color:#228B22;">¡Correcto! ${mg.base} × ${mg.mult} = ${result.toLocaleString('es-CO')} 🎉</span>`;
+        playCorrect(); launchConfetti(30); speak('¡Excelente, Valery!', { pitch: 1.15 }); buddyReact(false);
+        mgReward(10, 3); mgNext();
+    } else {
+        const diff = mg.needZeros - mg.added;
+        fb.innerHTML = `<span style="color:#EE5253;">¡Buuuh! Por ${mg.mult} se agregan ${mg.needZeros} ceros. ${diff > 0 ? 'Faltan ' + diff : 'Sobran ' + (-diff)}.</span>`;
+        playWrong(); speak('¡Buuuh!', { pitch: 0.7, rate: 0.85 });
+    }
+}
+
+
+
+/* ===== JUEGO 3: Escalera de Múltiplos (M.C.M.) ===== */
+function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+function lcm(a, b) { return a * b / gcd(a, b); }
+function mgMcmStart() {
+    mg = { id:'mcm', round:1, total:3 };
+    document.getElementById('mg-title').innerText = '🪜 Escalera de Múltiplos';
+    mgUpdateHud();
+    mgMcmRound();
+}
+function mgMcmRound() {
+    const pairs = [[8, 4], [10, 12], [6, 4], [5, 10], [3, 6]]; // incluye los del taller
+    const p = pairs[Math.floor(Math.random() * pairs.length)];
+    mg.a = p[0]; mg.b = p[1];
+    mg.mcm = lcm(mg.a, mg.b);
+    mg.stepsA = 1; mg.stepsB = 1;
+    document.getElementById('mg-instructions').innerText =
+        `Toca "+ número" para construir los múltiplos de ${mg.a} y ${mg.b}. Cuando el MISMO número aparezca en las dos escaleras, ¡tócalo! Ese es el M.C.M.`;
+    document.getElementById('mg-feedback').innerHTML = '';
+    mgMcmRender();
+}
+function mgMcmRender() {
+    const listA = []; for (let i = 1; i <= mg.stepsA; i++) listA.push(mg.a * i);
+    const listB = []; for (let i = 1; i <= mg.stepsB; i++) listB.push(mg.b * i);
+    const common = new Set(listA.filter(x => listB.includes(x)));
+    const col = (list) => list.map(v => {
+        const c = common.has(v);
+        return `<div class="mult-step ${c ? 'common' : ''}" ${c ? `onclick="mgMcmPick(${v})"` : ''}>${v}</div>`;
+    }).join('');
+    document.getElementById('mg-area').innerHTML = `
+        <div class="mg-progress">Ronda ${mg.round} de ${mg.total} · M.C.M. de ${mg.a} y ${mg.b}</div>
+        <div class="mult-cols">
+            <div class="mult-col"><h4>Múltiplos de ${mg.a}</h4>${col(listA)}
+                <button class="num-tile" style="width:100%" onclick="mgMcmStep('a')">+ ${mg.a}</button></div>
+            <div class="mult-col"><h4>Múltiplos de ${mg.b}</h4>${col(listB)}
+                <button class="num-tile" style="width:100%" onclick="mgMcmStep('b')">+ ${mg.b}</button></div>
+        </div>`;
+    document.getElementById('mg-controls').innerHTML = '';
+}
+function mgMcmStep(which) {
+    if (which === 'a') mg.stepsA++; else mg.stepsB++;
+    playClick();
+    mgMcmRender();
+}
+function mgMcmPick(v) {
+    const fb = document.getElementById('mg-feedback');
+    if (v === mg.mcm) {
+        fb.innerHTML = `<span style="color:#228B22;">¡Correcto! El M.C.M. de ${mg.a} y ${mg.b} es ${mg.mcm} 🎉</span>`;
+        playCorrect(); launchConfetti(30); speak('¡Excelente, Valery!', { pitch: 1.15 }); buddyReact(false);
+        mgReward(12, 4); mgNext();
+    } else {
+        fb.innerHTML = `<span style="color:#EE5253;">¡Buuuh! El M.C.M. es el número común MÁS PEQUEÑO. 👀</span>`;
+        playWrong(); speak('¡Buuuh!', { pitch: 0.7, rate: 0.85 });
+    }
+}
