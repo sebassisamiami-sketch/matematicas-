@@ -206,6 +206,11 @@
         .num-tile:active { transform:translateY(4px); box-shadow:0 0 0; }
         .num-tile.picked { background:#0ABDE3; box-shadow:0 4px 0 #0891b2; }
         .mg-progress { font-size:0.9em; color:#666; margin:6px 0; }
+        /* Tablas de multiplicar: arreglo de puntos (filas × columnas) */
+        .dot-grid { display:inline-flex; flex-direction:column; gap:4px; background:#fff;
+            border:2px solid #6C5CE7; border-radius:12px; padding:10px; margin:10px auto; max-width:100%; }
+        .dot-row { display:flex; gap:4px; justify-content:center; }
+        .dot { width:14px; height:14px; border-radius:50%; background:#A29BFE; box-shadow:inset 0 -2px 0 rgba(0,0,0,0.12); }
 
         /* ===== PANEL VISUAL DIDÁCTICO DE LAS PREGUNTAS ===== */
         #question-visual { margin: 6px auto 14px; }
