@@ -396,7 +396,57 @@ const allQuestions = [
       rule:"📊 Comparar frecuencias",
       exp:"40 es mayor que 30, así que hay más Tomates que Patatas.",
       examples:[{op:"40 vs 30",res:"40 gana 🍅"}],
-      scene:'<span class="a-float">🍅</span><span class="a-bounce">🥔</span>' }
+      scene:'<span class="a-float">🍅</span><span class="a-bounce">🥔</span>' },
+
+    /* ---------- NIVEL 7: ¡A ESCRIBIR! (combina todos los temas, respuesta escrita) ---------- */
+    { level:7, type:'write', q:"✏️ Escribe el resultado de 4.567 × 100",
+      answer:"456700", answerText:"456.700", accept:["456.700"],
+      rule:"✖️ Multiplicar por 100",
+      exp:"Por 100 se agregan DOS ceros al final: 4.567 se convierte en 456.700.",
+      examples:[{op:"4.567 × 100",res:"456.700"}],
+      scene:'<span class="a-bounce">🛒</span><span class="a-float">✏️</span>' },
+
+    { level:7, type:'write', q:"✏️ Escribe el cociente de 56 ÷ 8",
+      answer:"7", answerText:"7",
+      rule:"➗ División exacta",
+      exp:"8 × 7 = 56, así que 56 ÷ 8 = 7.",
+      examples:[{op:"56 ÷ 8",res:"7"},{op:"8 × 7",res:"56 ✔"}],
+      scene:'<span class="a-bounce">🍬</span><span class="a-float">✏️</span>' },
+
+    { level:7, type:'write', q:"✏️ Resuelve y escribe el resultado: 6 × 7 + 20 − 3 × 4",
+      answer:"50", answerText:"50",
+      rule:"🔢 Orden de operaciones",
+      exp:"Primero las multiplicaciones: 6×7=42 y 3×4=12. Luego: 42 + 20 − 12 = 50.",
+      examples:[{op:"6×7 y 3×4",res:"42 y 12"},{op:"42+20−12",res:"50"}],
+      scene:'<span class="a-swing">🏭</span><span class="a-float">✏️</span>' },
+
+    { level:7, type:'write', q:"✏️ Escribe el M.C.M. de 6 y 8",
+      answer:"24", answerText:"24",
+      rule:"🔗 Mínimo Común Múltiplo",
+      exp:"El menor número que es múltiplo de 6 y de 8 es 24 (6×4=24 y 8×3=24).",
+      examples:[{op:"6 × 4",res:"24"},{op:"8 × 3",res:"24"}],
+      scene:'<span class="a-float">📚</span><span class="a-bounce">✏️</span>' },
+
+    { level:7, type:'write', q:"✏️ Escribe el M.C.D. de 24 y 36",
+      answer:"12", answerText:"12",
+      rule:"🧩 Máximo Común Divisor",
+      exp:"El mayor número que divide exacto a 24 y a 36 es 12 (24÷12=2 y 36÷12=3).",
+      examples:[{op:"24 ÷ 12",res:"2 ✔"},{op:"36 ÷ 12",res:"3 ✔"}],
+      scene:'<span class="a-bounce">📘</span><span class="a-float">✏️</span>' },
+
+    { level:7, type:'write', q:"✏️ Escribe el perímetro (en cm) de un cuadrado de 9 cm por lado",
+      answer:"36", answerText:"36 cm", accept:["36cm"],
+      rule:"📐 Perímetro del cuadrado",
+      exp:"El cuadrado tiene 4 lados iguales: 4 × 9 = 36 cm.",
+      examples:[{op:"4 × 9",res:"36 cm"}],
+      scene:'<span class="a-float">🟦</span><span class="a-bounce">✏️</span>' },
+
+    { level:7, type:'write', q:"✏️ En la granja hay 30 patatas, 25 zanahorias y 40 tomates. Escribe cuántos vegetales hay en total",
+      answer:"95", answerText:"95",
+      rule:"📊 Sumar frecuencias",
+      exp:"Sumamos las tres cantidades: 30 + 25 + 40 = 95 vegetales.",
+      examples:[{op:"30 + 25",res:"55"},{op:"55 + 40",res:"95"}],
+      scene:'<span class="a-bounce">🌾</span><span class="a-float">✏️</span>' }
 ];
 
 /* Nombres e íconos de cada nivel (para el mapa) */
@@ -407,7 +457,8 @@ const levelInfo = {
     4: { name:"Divisores/MCM/MCD", icon:"📚", color:"lvl-c4" },
     5: { name:"Geometría",      icon:"🔬", color:"lvl-c5" },
     6: { name:"Estadística",    icon:"🌾", color:"lvl-c6" },
-    0: { name:"¡Desafío Final!", icon:"🏆", color:"lvl-boss" }
+    0: { name:"¡Desafío Final!", icon:"🏆", color:"lvl-boss" },
+    7: { name:"¡A Escribir!",   icon:"✏️", color:"lvl-write" }
 };
 
 
@@ -525,7 +576,7 @@ function saveMedal(level, rank) {
 function levelUnlocked(level) {
     if (level === 1) return true;
     const m = getMedals();
-    if (level === 0) return [1,2,3,4,5,6].every(l => m[l]); // desafío final: todos los niveles
+    if (level === 0 || level === 7) return [1,2,3,4,5,6].every(l => m[l]); // desafío/escribir: todos los niveles
     return !!m[level-1]; // se desbloquea al completar el anterior
 }
 function allLevelsDone() { const m = getMedals(); return [1,2,3,4,5,6].every(l => m[l]); }
@@ -781,6 +832,21 @@ function renderMap() {
         </button>
         <span class="node-label">${bossInfo.name}</span>
     </div></div>`;
+    // Conector + Nodo "¡A Escribir!" (nivel 7), también se desbloquea al completar los 6
+    html += '<div class="map-connector"></div>';
+    const wInfo = levelInfo[7];
+    const wUnlocked = levelUnlocked(7);
+    const wDone = !!medals[7];
+    const wCls = 'node-btn ' + wInfo.color + (wDone ? ' done' : '');
+    const wMedal = wDone ? `<span class="node-medal">${rankEmoji[medals[7]]}</span>` : '';
+    const wLock = (!wUnlocked && !wDone) ? `<span class="node-lock">🔒</span>` : '';
+    const wDis = (!wUnlocked && !wDone) ? 'disabled' : '';
+    html += `<div class="map-node right"><div class="node-wrap">
+        <button class="${wCls}" ${wDis} onclick="startGame(7)">
+            ${wInfo.icon}${wMedal}${wLock}
+        </button>
+        <span class="node-label">${wInfo.name}</span>
+    </div></div>`;
     map.innerHTML = html;
     renderGrade();
 }
@@ -839,15 +905,17 @@ function startGame(level) {
     // Elegimos las preguntas: nivel normal = subconjunto del nivel; desafío (0) = mezcla de todos
     let pool;
     if (level === 0) {
-        pool = shuffle(allQuestions).slice(0, 10); // desafío final: 10 preguntas variadas
+        pool = shuffle(allQuestions.filter(q => q.type !== 'write')).slice(0, 10); // desafío: 10 de opción múltiple
+    } else if (level === 7) {
+        pool = shuffle(allQuestions.filter(q => q.level === 7)); // ¡A Escribir!: las 7 preguntas escritas
     } else {
         pool = shuffle(allQuestions.filter(q => q.level === level)).slice(0, 6); // 6 al azar del nivel
     }
-    // Mezclamos también las opciones de cada pregunta
+    // Preparamos cada pregunta (las de escribir no tienen opciones)
     questions = pool.map(q => {
+        if (q.type === 'write') return { ...q };
         const opts = q.options.map((o, idx) => ({ text: o.text, correct: idx === q.answer }));
-        const shuffledOpts = shuffle(opts);
-        return { ...q, shuffledOpts };
+        return { ...q, shuffledOpts: shuffle(opts) };
     });
     currentQ = 0; score = 0; points = 0; gems = 0; streak = 0; bestStreak = 0;
     answers = new Array(questions.length).fill(null);
@@ -870,11 +938,21 @@ function showQuestion() {
 
     const already = answers[currentQ];
     const optsDiv = document.getElementById('options');
-    let html = '';
-    q.shuffledOpts.forEach((opt, i) => {
-        html += `<div class="option-row"><button class="btn btn-option" onclick="checkAnswer(${i}, this)">${opt.text}</button></div>`;
-    });
-    optsDiv.innerHTML = html;
+    if (q.type === 'write') {
+        optsDiv.innerHTML = `
+            <div class="write-row">
+                <input type="text" id="write-input" class="write-input" placeholder="Escribe tu respuesta ✏️"
+                       inputmode="numeric" autocomplete="off" autofocus
+                       onkeydown="if(event.key==='Enter'){checkWriteAnswer();}">
+                <button class="btn write-check" onclick="checkWriteAnswer()">✅ Comprobar</button>
+            </div>`;
+    } else {
+        let html = '';
+        q.shuffledOpts.forEach((opt, i) => {
+            html += `<div class="option-row"><button class="btn btn-option" onclick="checkAnswer(${i}, this)">${opt.text}</button></div>`;
+        });
+        optsDiv.innerHTML = html;
+    }
 
     // Navegación
     document.getElementById('back-btn').disabled = currentQ === 0;
@@ -895,8 +973,9 @@ function updateHintButton() {
     const hintBtn = document.getElementById('hint-btn');
     if (!hintBtn) return;
     hintBtn.innerText = '💡 Pista (' + hintsLeft + ')';
-    // Se desactiva si: ya respondió, ya usó pista en esta pregunta, o no quedan pistas
-    hintBtn.disabled = !!answers[currentQ] || !!hintUsed[currentQ] || hintsLeft <= 0;
+    const q = questions[currentQ];
+    // Se desactiva si: es de escribir, ya respondió, ya usó pista, o no quedan pistas
+    hintBtn.disabled = (q && q.type === 'write') || !!answers[currentQ] || !!hintUsed[currentQ] || hintsLeft <= 0;
 }
 
 /* ============ VISUALES DIDÁCTICOS DE CADA PREGUNTA ============
@@ -1086,12 +1165,23 @@ function useHint() {
 function revealAnswered() {
     const q = questions[currentQ];
     const rec = answers[currentQ];
-    const btns = document.querySelectorAll('#options .btn-option');
-    btns.forEach((b, i) => {
-        b.disabled = true;
-        if (q.shuffledOpts[i].correct) b.style.background = '#32CD32';
-        else if (i === rec.picked && !rec.correct) b.style.background = '#EE5253';
-    });
+    if (q.type === 'write') {
+        const input = document.getElementById('write-input');
+        if (input) {
+            input.value = (rec.typed !== undefined ? rec.typed : '');
+            input.disabled = true;
+            input.classList.add(rec.correct ? 'write-ok' : 'write-no');
+        }
+        const chk = document.querySelector('.write-check');
+        if (chk) chk.disabled = true;
+    } else {
+        const btns = document.querySelectorAll('#options .btn-option');
+        btns.forEach((b, i) => {
+            b.disabled = true;
+            if (q.shuffledOpts[i].correct) b.style.background = '#32CD32';
+            else if (i === rec.picked && !rec.correct) b.style.background = '#EE5253';
+        });
+    }
     showExplanation(rec.correct);
     document.getElementById('feedback').innerHTML = rec.correct
         ? '<span style="color:#228B22;">¡Correcto! 🎉</span>'
@@ -1147,10 +1237,70 @@ function checkAnswer(selectedIndex, btn) {
     document.getElementById('fwd-btn').disabled = false;
 }
 
+/* Valida la respuesta escrita: compara solo los dígitos (ignora puntos, espacios, "cm") */
+function validateWrite(input, q) {
+    const norm = s => String(s).toLowerCase().replace(/[^\d]/g, '');
+    const u = norm(input);
+    if (u === '') return false;
+    const cands = [q.answer].concat(q.accept || []).map(norm);
+    return cands.includes(u);
+}
+
+/* Comprueba la respuesta escrita del nivel "¡A Escribir!" */
+function checkWriteAnswer() {
+    if (answers[currentQ]) return;
+    const q = questions[currentQ];
+    const input = document.getElementById('write-input');
+    if (!input) return;
+    const typed = input.value.trim();
+    if (typed === '') {
+        input.classList.add('write-no');
+        setTimeout(() => input.classList.remove('write-no'), 400);
+        showBuddyBubble('Escribe tu respuesta ✏️');
+        return;
+    }
+    const isCorrect = validateWrite(typed, q);
+    answers[currentQ] = { typed: typed, correct: isCorrect };
+    input.disabled = true;
+    const chk = document.querySelector('.write-check');
+    if (chk) chk.disabled = true;
+    input.classList.add(isCorrect ? 'write-ok' : 'write-no');
+
+    const fb = document.getElementById('feedback');
+    if (isCorrect) {
+        score += 1; streak += 1; if (streak > bestStreak) bestStreak = streak;
+        let earnedP = 12, earnedG = 3;               // escribir vale un poco más
+        if (streak >= 3) { earnedP += 5; earnedG += 1; }
+        points += earnedP; gems += earnedG;
+        addPoints(earnedP); addGems(earnedG); addStars(1);
+        fb.innerHTML = '<span style="color:#228B22;">¡Correcto! 🎉</span>';
+        playCorrect(); launchConfetti(streak >= 3 ? 45 : 25);
+        showRewardPopup(`+${earnedP} 🏆`);
+        if (streak === 3) showBuddyBubble('¡Racha de 3! 🔥 ¡Bonus!');
+        buddyReact(false);
+        speak('¡Excelente, Valery!', { pitch: 1.15 });
+    } else {
+        streak = 0;
+        fb.innerHTML = '<span style="color:#EE5253;">¡Ups! ❌</span>';
+        playWrong();
+        const b = document.getElementById('game-container');
+        b.classList.add('shake'); setTimeout(() => b.classList.remove('shake'), 500);
+        showBuddyBubble('¡Buuuh! Mira la explicación 👇');
+        speak('¡Buuuh!', { pitch: 0.7, rate: 0.85 });
+        const buddy = document.getElementById('buddy');
+        if (buddy) { buddy.classList.remove('react-shake2'); void buddy.offsetWidth; buddy.classList.add('react-shake2'); setTimeout(() => buddy.classList.remove('react-shake2'), 900); }
+    }
+    showExplanation(isCorrect);
+    updateHUD();
+    document.getElementById('next-btn').classList.remove('hidden');
+    document.getElementById('fwd-btn').disabled = false;
+    updateHintButton();
+}
+
 function showExplanation(isCorrect) {
     const q = questions[currentQ];
     const box = document.getElementById('explanation-box');
-    const correctText = q.options[q.answer].text;
+    const correctText = (q.type === 'write') ? (q.answerText || q.answer) : q.options[q.answer].text;
     let html = `<span class="exp-header ${isCorrect?'ok':'no'}">${isCorrect?'✅ ¡Muy bien!':'💡 ¡Casi! Aprende esto:'}</span>`;
     html += `<span class="exp-rule">${q.rule}</span>`;
     if (!isCorrect) html += `<p class="exp-text">La respuesta correcta es <span class="correct-answer">${correctText}</span>.</p>`;
@@ -1216,12 +1366,17 @@ function endLevel() {
         msg = (rank === 3)
             ? '🏆 ¡DESAFÍO FINAL SUPERADO A LA PERFECCIÓN! ¡Eres una LEYENDA de las mates! 👑'
             : '🏆 ¡Completaste el Desafío Final! ¡Increíble, Valery!';
+    } else if (currentLevel === 7) {
+        // Nivel ¡A Escribir!
+        msg = (rank === 3)
+            ? '✏️ ¡ESCRIBISTE TODO PERFECTO! ¡Dominas todos los temas, Valery! 👑'
+            : '✏️ ¡Completaste el nivel de Escribir! ¡Muy bien!';
     }
 
     // Nota actual y si completó todos los niveles
     const allDone = allLevelsDone();
     msg += ` 📊 Tu nota ahora es ${currentGrade().toFixed(1)}.`;
-    if (allDone && currentLevel !== 0) {
+    if (allDone && currentLevel !== 0 && currentLevel !== 7) {
         msg += ' 🎓 ¡Completaste TODOS los niveles! ¡Pasaste de 1.0 a 5.0! 🏆 Ahora prueba el 🏆 Desafío Final.';
     }
 
