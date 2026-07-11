@@ -576,7 +576,7 @@ function saveMedal(level, rank) {
 function levelUnlocked(level) {
     if (level === 1) return true;
     const m = getMedals();
-    if (level === 0 || level === 7) return [1,2,3,4,5,6].every(l => m[l]); // desafío/escribir: todos los niveles
+    if (level === 0 || level === 7 || level === 'ultimate') return [1,2,3,4,5,6].every(l => m[l]); // desafío/escribir/definitivo: todos los niveles
     return !!m[level-1]; // se desbloquea al completar el anterior
 }
 function allLevelsDone() { const m = getMedals(); return [1,2,3,4,5,6].every(l => m[l]); }
@@ -927,7 +927,16 @@ function startGame(level) {
     currentLevel = level;
     // Elegimos las preguntas: nivel normal = subconjunto del nivel; desafío (0) = mezcla de todos
     let pool;
-    if (level === 0) {
+    if (level === 'ultimate') {
+        // Reto Definitivo: al menos una pregunta de CADA tema (niveles 1-7) + relleno al azar, 12 en total
+        let guaranteed = [];
+        [1, 2, 3, 4, 5, 6, 7].forEach(l => {
+            const qs = shuffle(allQuestions.filter(q => q.level === l));
+            if (qs[0]) guaranteed.push(qs[0]);
+        });
+        const rest = shuffle(allQuestions.filter(q => !guaranteed.includes(q)));
+        pool = shuffle(guaranteed.concat(rest.slice(0, Math.max(0, 12 - guaranteed.length))));
+    } else if (level === 0) {
         pool = shuffle(allQuestions.filter(q => q.type !== 'write')).slice(0, 10); // desafío: 10 de opción múltiple
     } else if (level === 7) {
         pool = shuffle(allQuestions.filter(q => q.level === 7)); // ¡A Escribir!: las 7 preguntas escritas
@@ -1373,6 +1382,9 @@ function endLevel() {
     else if (score >= Math.ceil(total * 0.6)) rank = 2; // plata: 60%+
     saveMedal(currentLevel, rank);
 
+    // Reto Definitivo: 100 diamantes CADA vez que se completa (oro, plata o bronce)
+    if (currentLevel === 'ultimate') { gems += 100; addGems(100); }
+
     document.getElementById('final-score').innerText = score + '/' + total;
     document.getElementById('final-points').innerText = points;
     document.getElementById('final-gems').innerText = gems;
@@ -1394,19 +1406,24 @@ function endLevel() {
         msg = (rank === 3)
             ? '✏️ ¡ESCRIBISTE TODO PERFECTO! ¡Dominas todos los temas, Valery! 👑'
             : '✏️ ¡Completaste el nivel de Escribir! ¡Muy bien!';
+    } else if (currentLevel === 'ultimate') {
+        // Reto Definitivo (todo mezclado) — premio de 100 diamantes
+        const medalWord = rank === 3 ? 'ORO 🥇' : rank === 2 ? 'PLATA 🥈' : 'BRONCE 🥉';
+        msg = `🌟 ¡Completaste el RETO DEFINITIVO con medalla de ${medalWord}! `
+            + `¡Ganaste 💎 100 diamantes! Puedes repetirlo para ganar más. 🎁`;
     }
 
     // Nota actual y si completó todos los niveles
     const allDone = allLevelsDone();
-    msg += ` 📊 Tu nota ahora es ${currentGrade().toFixed(1)}.`;
-    if (allDone && currentLevel !== 0 && currentLevel !== 7) {
+    if (currentLevel !== 'ultimate') msg += ` 📊 Tu nota ahora es ${currentGrade().toFixed(1)}.`;
+    if (allDone && currentLevel !== 0 && currentLevel !== 7 && currentLevel !== 'ultimate') {
         msg += ' 🎓 ¡Completaste TODOS los niveles! ¡Pasaste de 1.0 a 5.0! 🏆 Ahora prueba el 🏆 Desafío Final.';
     }
 
     document.getElementById('end-message').innerText = msg;
     showScreen('end-screen');
-    playWin(); launchConfetti(currentLevel === 0 ? 120 : 80);
-    showRewardPopup(currentLevel === 0 ? '👑 ¡Leyenda!' : '🏅 ¡Nivel superado!');
+    playWin(); launchConfetti((currentLevel === 0 || currentLevel === 'ultimate') ? 120 : 80);
+    showRewardPopup(currentLevel === 'ultimate' ? '💎 +100 diamantes!' : (currentLevel === 0 ? '👑 ¡Leyenda!' : '🏅 ¡Nivel superado!'));
 }
 
 /* ============ TIENDA ============ */
@@ -1665,13 +1682,29 @@ function renderMinigames() {
     const grid = document.getElementById('minigames-grid');
     if (!grid) return;
     const done = getMgDone();
-    grid.innerHTML = minigamesData.map(g => `
+    let html = minigamesData.map(g => `
         <div class="mg-card" onclick="openMinigame('${g.id}')">
             <div class="mg-emoji">${g.emoji}</div>
             <div class="mg-name">${g.name}</div>
             <div class="mg-tag">${g.tag}</div>
             ${done[g.id] ? '<div class="node-medal">🏅 ¡Completado!</div>' : ''}
         </div>`).join('');
+    // Reto Definitivo: usa el motor de preguntas (todo mezclado) y da 100 💎 cada vez
+    const unlocked = levelUnlocked('ultimate');
+    const uRank = getMedals()['ultimate'];
+    const medalTxt = uRank ? (uRank === 3 ? '🥇 Oro' : uRank === 2 ? '🥈 Plata' : '🥉 Bronce') : '';
+    html += `
+        <div class="mg-card mg-ultimate ${unlocked ? '' : 'mg-locked'}" onclick="${unlocked ? "startGame('ultimate')" : "mgUltimateLocked()"}">
+            <div class="mg-emoji">🌟</div>
+            <div class="mg-name">Reto Definitivo</div>
+            <div class="mg-tag">¡TODO mezclado! · +100 💎 cada vez</div>
+            ${unlocked ? (medalTxt ? `<div class="node-medal">Mejor: ${medalTxt}</div>` : '') : '<div class="node-medal">🔒 Completa los 6 niveles</div>'}
+        </div>`;
+    grid.innerHTML = html;
+}
+function mgUltimateLocked() {
+    showBuddyBubble('¡Completa los 6 niveles para desbloquear el Reto Definitivo! 🔒');
+    playWrong();
 }
 
 let mg = null; // estado del mini-juego actual
