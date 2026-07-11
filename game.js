@@ -1633,7 +1633,8 @@ document.addEventListener('DOMContentLoaded', init);
 const minigamesData = [
     { id:'division', emoji:'🍬', name:'Reparto de Caramelos', tag:'Divisiones (2,3,4,5,6)' },
     { id:'zeros',    emoji:'0️⃣', name:'Máquina de Ceros',      tag:'× 10, 100, 1000' },
-    { id:'mcm',      emoji:'🪜', name:'Escalera de Múltiplos',  tag:'M.C.M.' }
+    { id:'mcm',      emoji:'🪜', name:'Escalera de Múltiplos',  tag:'M.C.M.' },
+    { id:'tables',   emoji:'✖️', name:'Tablas de Multiplicar',  tag:'Tablas del 2 al 9' }
 ];
 function getMgDone() { try { return JSON.parse(lsGet('vmMgDone','{}')); } catch(e){ return {}; } }
 function setMgDone(id) { const d = getMgDone(); d[id] = true; lsSet('vmMgDone', JSON.stringify(d)); }
@@ -1663,6 +1664,7 @@ function openMinigame(id) {
     if (id === 'division') mgDivisionStart();
     else if (id === 'zeros') mgZerosStart();
     else if (id === 'mcm') mgMcmStart();
+    else if (id === 'tables') mgTablesStart();
 }
 function mgRestart() { if (mg) { playClick(); openMinigame(mg.id); } }
 function mgReward(points, gems) {
@@ -1677,6 +1679,7 @@ function mgNext() {
         if (mg.id === 'division') mgDivisionRound();
         else if (mg.id === 'zeros') mgZerosRound();
         else if (mg.id === 'mcm') mgMcmRound();
+        else if (mg.id === 'tables') mgTablesRound();
     }, 950);
 }
 function mgComplete() {
@@ -1882,6 +1885,79 @@ function mgMcmPick(v) {
         mgReward(12, 4); mgNext();
     } else {
         fb.innerHTML = `<span style="color:#EE5253;">¡Buuuh! El M.C.M. es el número común MÁS PEQUEÑO. 👀</span>`;
+        playWrong(); speak('¡Buuuh!', { pitch: 0.7, rate: 0.85 });
+    }
+}
+
+
+
+/* ===== JUEGO 4: Tablas de Multiplicar (interactivo con arreglo de puntos) ===== */
+function mgTablesStart() {
+    mg = { id:'tables', round:1, total:10 };
+    document.getElementById('mg-title').innerText = '✖️ Tablas de Multiplicar';
+    mgUpdateHud();
+    mgTablesSelect();
+}
+function mgTablesSelect() {
+    document.getElementById('mg-instructions').innerText = '¿Qué tabla quieres practicar?';
+    document.getElementById('mg-feedback').innerHTML = '';
+    document.getElementById('mg-controls').innerHTML = '';
+    let tiles = '';
+    for (let t = 2; t <= 9; t++) tiles += `<button class="num-tile" onclick="mgTablesBegin(${t})">${t}</button>`;
+    tiles += `<button class="num-tile" style="background:#EE5253;box-shadow:0 4px 0 #b83b3b;min-width:90px;" onclick="mgTablesBegin(0)">🎲 Mezcla</button>`;
+    document.getElementById('mg-area').innerHTML =
+        `<div class="num-tiles" style="max-width:380px;margin:10px auto;">${tiles}</div>`;
+}
+function mgTablesBegin(table) {
+    mg.table = table;            // 0 = mezcla
+    mg.round = 1; mg.total = 10;
+    mg.queue = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    playClick();
+    mgUpdateHud();
+    mgTablesRound();
+}
+function mgTablesRound() {
+    const b = mg.queue[mg.round - 1];
+    const a = mg.table === 0 ? (2 + Math.floor(Math.random() * 8)) : mg.table;
+    mg.a = a; mg.b = b; mg.product = a * b;
+    document.getElementById('mg-instructions').innerText = `Toca el resultado correcto de ${a} × ${b}`;
+    document.getElementById('mg-feedback').innerHTML = '';
+    mgTablesRender();
+}
+function mgTablesRender() {
+    let dots = '';
+    for (let r = 0; r < mg.a; r++) {
+        let row = '';
+        for (let c = 0; c < mg.b; c++) row += '<span class="dot"></span>';
+        dots += `<div class="dot-row">${row}</div>`;
+    }
+    const opts = mgProductOptions(mg.a, mg.b);
+    const tiles = opts.map(n => `<button class="num-tile" onclick="mgTablesAnswer(${n})">${n}</button>`).join('');
+    document.getElementById('mg-area').innerHTML = `
+        <div class="mg-progress">Ronda ${mg.round} de ${mg.total} · Tabla ${mg.table === 0 ? 'mezclada' : 'del ' + mg.table}</div>
+        <div style="font-size:2em;font-weight:bold;color:#6C5CE7;">${mg.a} × ${mg.b}</div>
+        <div class="dot-grid">${dots}</div>
+        <div style="font-size:0.85em;color:#666;">${mg.a} fila(s) de ${mg.b} 🟣</div>
+        <div class="num-tiles">${tiles}</div>`;
+    document.getElementById('mg-controls').innerHTML = '';
+}
+function mgProductOptions(a, b) {
+    const correct = a * b;
+    const distractors = new Set();
+    const cands = [a * (b + 1), a * (b - 1), (a + 1) * b, (a - 1) * b, correct + 2, correct - 2, correct + a];
+    for (const c of cands) { if (c > 0 && c !== correct) distractors.add(c); if (distractors.size >= 3) break; }
+    let n = 1;
+    while (distractors.size < 3) { if (correct + n > 0) distractors.add(correct + n); n++; }
+    return shuffle([correct, ...[...distractors].slice(0, 3)]);
+}
+function mgTablesAnswer(n) {
+    const fb = document.getElementById('mg-feedback');
+    if (n === mg.product) {
+        fb.innerHTML = `<span style="color:#228B22;">¡Correcto! ${mg.a} × ${mg.b} = ${mg.product} 🎉</span>`;
+        playCorrect(); launchConfetti(25); speak('¡Excelente, Valery!', { pitch: 1.15 }); buddyReact(false);
+        mgReward(8, 2); mgNext();
+    } else {
+        fb.innerHTML = `<span style="color:#EE5253;">¡Buuuh! Cuenta los puntos: ${mg.a} filas de ${mg.b}. 👀</span>`;
         playWrong(); speak('¡Buuuh!', { pitch: 0.7, rate: 0.85 });
     }
 }
