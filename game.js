@@ -538,6 +538,33 @@ function currentGrade() { return 1 + (levelsCompleted() / 6) * 4; }
 function getCtx() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
 // Desbloquea el audio en el primer gesto del usuario (requerido en móviles)
 function unlockAudio() { try { const ctx = getCtx(); if (ctx.state === 'suspended') ctx.resume(); } catch(e){} }
+
+/* ============ LOCUTOR (voz en español) ============ */
+let esVoice = null;
+function pickVoice() {
+    if (!('speechSynthesis' in window)) return;
+    const voices = window.speechSynthesis.getVoices() || [];
+    esVoice = voices.find(v => /es[-_]/i.test(v.lang)) || voices.find(v => /^es/i.test(v.lang)) || null;
+}
+if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    pickVoice();
+    window.speechSynthesis.onvoiceschanged = pickVoice;
+}
+// Habla un texto en español, como un locutor (respeta el botón de sonido)
+function speak(text, opts) {
+    if (!soundOn) return;
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    try {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'es-ES';
+        if (esVoice) u.voice = esVoice;
+        u.rate = (opts && opts.rate) || 0.95;
+        u.pitch = (opts && opts.pitch) || 1.0;
+        u.volume = 1.0;
+        window.speechSynthesis.speak(u);
+    } catch(e){}
+}
 function playTone(freq, duration, type='sine', startTime=0, vol=0.2) {
     if (!soundOn) return;
     try {
@@ -588,6 +615,7 @@ function toggleSound() {
     const b = document.getElementById('sound-toggle');
     b.innerText = soundOn ? '🔊' : '🔇'; b.classList.toggle('off', !soundOn);
     if (soundOn) playClick();
+    else if (typeof window !== 'undefined' && 'speechSynthesis' in window) { try { window.speechSynthesis.cancel(); } catch(e){} }
 }
 
 /* ============ MÚSICA ============ */
@@ -931,15 +959,19 @@ function checkAnswer(selectedIndex, btn) {
         showRewardPopup(`+${earnedP} 🏆`);
         if (streak === 3) showBuddyBubble('¡Racha de 3! 🔥 ¡Bonus!');
         buddyReact(false);
+        // El locutor felicita en voz alta
+        speak('¡Excelente, Valery!', { pitch: 1.15 });
     } else {
         streak = 0;
         fb.innerHTML = '<span style="color:#EE5253;">¡Ups! ❌</span>';
         playWrong();
         const b = document.getElementById('game-container');
         b.classList.add('shake'); setTimeout(()=>b.classList.remove('shake'), 500);
-        // La mascota dice "buh" en cada respuesta incorrecta
+        // La mascota dice "buh" en cada respuesta incorrecta (globo + voz de locutor)
         const buhMsgs = ['¡Buuuh! 👎', '¡Buh, buh! 🫤', '¡Buuuh! ¡Inténtalo otra vez! 💪', '¡Buh! Casi... 😅'];
         showBuddyBubble(buhMsgs[Math.floor(Math.random() * buhMsgs.length)]);
+        // El locutor abuchea en voz alta
+        speak('¡Buuuh!', { pitch: 0.7, rate: 0.85 });
         const buddy = document.getElementById('buddy');
         if (buddy) { buddy.classList.remove('react-shake2'); void buddy.offsetWidth; buddy.classList.add('react-shake2'); setTimeout(()=>buddy.classList.remove('react-shake2'), 900); }
     }
