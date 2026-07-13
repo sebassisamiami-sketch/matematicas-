@@ -1784,17 +1784,24 @@ function mgComplete() {
     setMgDone(mg.id);
     document.getElementById('mg-title').innerText = '🏅 ¡Juego Completado!';
     document.getElementById('mg-instructions').innerText = '';
-    // Celebración especial del juego de tablas: muestra la tabla dominada
+    // Celebración especial del juego de tablas: 50 diamantes + tabla dominada
     let body;
-    if (mg.id === 'tables' && mg.table > 0) {
-        body = `<div style="font-size:2.4em">🏆⭐</div>
-            <div style="font-size:1.2em;font-weight:bold;color:#10AC84;">¡Dominaste la tabla del ${mg.table}!</div>
-            <div style="font-size:0.9em;color:#666;margin:4px 0;">Mejor combo: 🔥 ${mg.bestCombo || 0}</div>
-            ${buildTableChart(mg.table, true)}`;
-    } else if (mg.id === 'tables') {
-        body = `<div style="font-size:2.6em">🏆🎲</div>
-            <div style="font-size:1.2em;font-weight:bold;color:#10AC84;">¡Practicaste muchas tablas, Valery!</div>
-            <div style="font-size:0.9em;color:#666;margin:4px 0;">Mejor combo: 🔥 ${mg.bestCombo || 0}</div>`;
+    if (mg.id === 'tables') {
+        addGems(50);                                   // 50 💎 cada vez que se completa (100%)
+        const precision = Math.round((mg.firstTry || 0) / (mg.total || 10) * 100);
+        const perfect = (mg.firstTry || 0) >= (mg.total || 10);
+        const stats = `<div class="viz-title" style="font-size:1.05em;">💎 +50 diamantes · 🔥 Mejor combo: ${mg.bestCombo || 0}</div>
+            <div style="font-size:0.95em;color:#666;margin:4px 0;">${perfect ? '🌟 ¡100% PERFECTO! (todo a la primera)' : 'Precisión a la primera: ' + precision + '%'}</div>`;
+        showRewardPopup('💎 +50');
+        if (mg.table > 0) {
+            body = `<div style="font-size:2.4em">🏆⭐</div>
+                <div style="font-size:1.2em;font-weight:bold;color:#10AC84;">¡Dominaste la tabla del ${mg.table}!</div>
+                ${stats}${buildTableChart(mg.table, true)}`;
+        } else {
+            body = `<div style="font-size:2.6em">🏆🎲</div>
+                <div style="font-size:1.2em;font-weight:bold;color:#10AC84;">¡Practicaste muchas tablas, Valery!</div>
+                ${stats}`;
+        }
     } else {
         body = `<div style="font-size:3em">🏆</div>
             <div style="font-size:1.3em;font-weight:bold;color:#10AC84;">¡Muy bien, Valery! Terminaste este juego.</div>`;
@@ -2006,6 +2013,8 @@ function mgMcmPick(v) {
    Incluye: modo estudiar la tabla, arreglo de puntos, combos con bonus,
    barra de progreso de estrellas, ayuda de conteo saltado y celebración final. */
 const TABLE_COLORS = { 2:'#FF9F43', 3:'#10AC84', 4:'#0ABDE3', 5:'#EE5253', 6:'#5F27CD', 7:'#E84393', 8:'#F368E0', 9:'#FF6B6B', 0:'#6C5CE7' };
+// Tipos de reto combinados para variar el juego de tablas
+const TABLE_CHALLENGES = ['product', 'missing', 'truefalse', 'skip', 'write'];
 function mgTablesStart() {
     mg = { id:'tables', round:1, total:10, combo:0, bestCombo:0, correctCount:0 };
     document.getElementById('mg-title').innerText = '✖️ Tablas de Multiplicar';
@@ -2054,7 +2063,7 @@ function mgTablesSpeakTable() {
 }
 function mgTablesPlay() {
     playClick();
-    mg.round = 1; mg.total = 10; mg.combo = 0; mg.bestCombo = 0; mg.correctCount = 0;
+    mg.round = 1; mg.total = 10; mg.combo = 0; mg.bestCombo = 0; mg.correctCount = 0; mg.firstTry = 0;
     mg.queue = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     mgUpdateHud();
     mgTablesRound();
@@ -2063,46 +2072,97 @@ function mgTablesRound() {
     const b = mg.queue[mg.round - 1];
     const a = mg.table === 0 ? (2 + Math.floor(Math.random() * 8)) : mg.table;
     mg.a = a; mg.b = b; mg.product = a * b; mg.tries = 0;
-    document.getElementById('mg-instructions').innerText = `Toca el resultado de ${a} × ${b}`;
+    // La primera ronda es multiplicación normal; luego se mezclan los retos
+    mg.challenge = mg.round === 1 ? 'product' : TABLE_CHALLENGES[Math.floor(Math.random() * TABLE_CHALLENGES.length)];
+    if (mg.challenge === 'skip') {
+        mg.skipPos = 2 + Math.floor(Math.random() * 4);   // 2..5
+        mg.answer = mg.a * mg.skipPos;
+    } else if (mg.challenge === 'missing') {
+        mg.answer = mg.b;
+    } else if (mg.challenge === 'truefalse') {
+        if (Math.random() < 0.5) mg.shown = mg.product;
+        else { const off = (Math.random() < 0.5 ? 1 : -1) * mg.a; mg.shown = (mg.product + off > 0) ? mg.product + off : mg.product + mg.a; }
+        mg.tfAnswer = (mg.shown === mg.product);
+        mg.answer = mg.product;
+    } else {
+        mg.answer = mg.product;
+    }
     document.getElementById('mg-feedback').innerHTML = '';
     mgTablesRender();
 }
-function mgTablesRender(revealSkip) {
-    const color = TABLE_COLORS[mg.table] || '#6C5CE7';
-    // Arreglo de puntos (filas × columnas)
+function mgDots(color) {
     let dots = '';
     for (let r = 0; r < mg.a; r++) {
         let row = '';
         for (let c = 0; c < mg.b; c++) row += `<span class="dot" style="background:${color}"></span>`;
         dots += `<div class="dot-row">${row}</div>`;
     }
-    // Barra de progreso con estrellas (10 casillas)
+    return `<div class="dot-grid" style="border-color:${color}">${dots}</div>`;
+}
+function skipHelpHtml() {
+    let seq = '';
+    for (let i = 1; i <= mg.b; i++) {
+        const v = mg.a * i;
+        seq += `<span class="skip-n ${i === mg.b ? 'hi' : ''}">${v}</span>${i < mg.b ? '<span class="skip-ar">→</span>' : ''}`;
+    }
+    return `<div class="skip-line"><div class="skip-title">Cuenta de ${mg.a} en ${mg.a}:</div>${seq}</div>`;
+}
+function mgTablesRender(showHelp) {
+    const color = TABLE_COLORS[mg.table] || '#6C5CE7';
     let stars = '';
-    for (let i = 0; i < mg.total; i++) {
-        stars += `<span class="pstar ${i < mg.correctCount ? 'on' : ''}">${i < mg.correctCount ? '⭐' : '·'}</span>`;
-    }
-    // Combo
+    for (let i = 0; i < mg.total; i++) stars += `<span class="pstar ${i < mg.correctCount ? 'on' : ''}">${i < mg.correctCount ? '⭐' : '·'}</span>`;
     const comboTag = mg.combo >= 2 ? `<span class="combo">🔥 Combo x${mg.combo}</span>` : '';
-    // Ayuda de conteo saltado (solo tras fallar)
-    let skip = '';
-    if (revealSkip) {
+    const header = `<div class="mg-progress">Ronda ${mg.round}/${mg.total} · Tabla ${mg.table === 0 ? 'mezclada 🎲' : 'del ' + mg.table} ${comboTag}</div>
+        <div class="pstar-row">${stars}</div>`;
+    const inst = document.getElementById('mg-instructions');
+    let body = '';
+
+    if (mg.challenge === 'product') {
+        inst.innerText = `Toca el resultado de ${mg.a} × ${mg.b}`;
+        const tiles = mgProductOptions(mg.a, mg.b).map(n => `<button class="num-tile" onclick="mgTablesPick(${n})">${n}</button>`).join('');
+        body = `<div class="challenge-tag">✖️ Multiplica</div>
+            <div class="mg-eq" style="color:${color}">${mg.a} × ${mg.b}</div>
+            ${mgDots(color)}<div style="font-size:0.85em;color:#666;">${mg.a} fila(s) de ${mg.b}</div>
+            ${showHelp ? skipHelpHtml() : ''}<div class="num-tiles">${tiles}</div>`;
+    } else if (mg.challenge === 'missing') {
+        inst.innerText = `¿Por cuánto multiplicas ${mg.a} para llegar a ${mg.product}?`;
+        const tiles = mgFactorOptions(mg.b).map(n => `<button class="num-tile" onclick="mgTablesPick(${n})">${n}</button>`).join('');
+        body = `<div class="challenge-tag">🧩 Factor que falta</div>
+            <div class="mg-eq" style="color:${color}">${mg.a} × ⬜ = ${mg.product}</div>
+            ${showHelp ? skipHelpHtml() : ''}<div class="num-tiles">${tiles}</div>`;
+    } else if (mg.challenge === 'truefalse') {
+        inst.innerText = `¿Esta multiplicación es correcta?`;
+        body = `<div class="challenge-tag">✅❌ ¿Verdadero o Falso?</div>
+            <div class="mg-eq" style="color:${color}">${mg.a} × ${mg.b} = ${mg.shown}</div>
+            ${showHelp ? `<div class="skip-line"><div class="skip-title">Lo correcto es ${mg.a} × ${mg.b} = ${mg.product}</div></div>` : ''}
+            <div class="num-tiles">
+                <button class="num-tile" style="background:#10AC84;box-shadow:0 4px 0 #0a8f6d;min-width:120px;" onclick="mgTablesPickTF(true)">✅ Verdadero</button>
+                <button class="num-tile" style="background:#EE5253;box-shadow:0 4px 0 #b83b3b;min-width:120px;" onclick="mgTablesPickTF(false)">❌ Falso</button>
+            </div>`;
+    } else if (mg.challenge === 'skip') {
+        inst.innerText = `¿Qué número falta en la cuenta?`;
         let seq = '';
-        for (let i = 1; i <= mg.b; i++) {
-            const val = mg.a * i;
-            seq += `<span class="skip-n ${i === mg.b ? 'hi' : ''}">${val}</span>${i < mg.b ? '<span class="skip-ar">→</span>' : ''}`;
+        for (let i = 1; i <= 5; i++) {
+            seq += (i === mg.skipPos) ? `<span class="skip-n hi">?</span>` : `<span class="skip-n">${mg.a * i}</span>`;
+            if (i < 5) seq += '<span class="skip-ar">→</span>';
         }
-        skip = `<div class="skip-line"><div class="skip-title">Cuenta de ${mg.a} en ${mg.a}:</div>${seq}</div>`;
+        const tiles = mgProductOptions(mg.a, mg.skipPos).map(n => `<button class="num-tile" onclick="mgTablesPick(${n})">${n}</button>`).join('');
+        body = `<div class="challenge-tag">🪜 Cuenta de ${mg.a} en ${mg.a}</div>
+            <div class="skip-line" style="font-size:1.15em">${seq}</div>
+            ${showHelp ? `<div class="skip-line"><div class="skip-title">El número que falta es ${mg.answer}</div></div>` : ''}
+            <div class="num-tiles">${tiles}</div>`;
+    } else if (mg.challenge === 'write') {
+        inst.innerText = `Escribe el resultado de ${mg.a} × ${mg.b}`;
+        body = `<div class="challenge-tag">⌨️ Escribe la respuesta</div>
+            <div class="mg-eq" style="color:${color}">${mg.a} × ${mg.b} =</div>
+            ${mgDots(color)}
+            ${showHelp ? skipHelpHtml() : ''}
+            <div class="write-row">
+                <input type="text" id="mg-write-input" class="write-input" inputmode="numeric" autocomplete="off" placeholder="?" onkeydown="if(event.key==='Enter')mgTablesWrite()">
+                <button class="btn write-check" onclick="mgTablesWrite()">✅</button>
+            </div>`;
     }
-    const opts = mgProductOptions(mg.a, mg.b);
-    const tiles = opts.map(n => `<button class="num-tile" onclick="mgTablesAnswer(${n})">${n}</button>`).join('');
-    document.getElementById('mg-area').innerHTML = `
-        <div class="mg-progress">Ronda ${mg.round}/${mg.total} · Tabla ${mg.table === 0 ? 'mezclada 🎲' : 'del ' + mg.table} ${comboTag}</div>
-        <div class="pstar-row">${stars}</div>
-        <div style="font-size:2.2em;font-weight:bold;color:${color};">${mg.a} × ${mg.b}</div>
-        <div class="dot-grid" style="border-color:${color}">${dots}</div>
-        <div style="font-size:0.85em;color:#666;">${mg.a} fila(s) de ${mg.b}</div>
-        ${skip}
-        <div class="num-tiles">${tiles}</div>`;
+    document.getElementById('mg-area').innerHTML = header + body;
     document.getElementById('mg-controls').innerHTML = '';
 }
 function mgProductOptions(a, b) {
@@ -2114,23 +2174,41 @@ function mgProductOptions(a, b) {
     while (distractors.size < 3) { if (correct + n > 0) distractors.add(correct + n); n++; }
     return shuffle([correct, ...[...distractors].slice(0, 3)]);
 }
-function mgTablesAnswer(n) {
+function mgFactorOptions(b) {
+    const d = new Set();
+    [b + 1, b - 1, b + 2, b - 2].forEach(c => { if (c >= 1 && c <= 12 && c !== b) d.add(c); });
+    let n = 3;
+    while (d.size < 3) { if (b + n <= 12) d.add(b + n); else if (b - n >= 1) d.add(b - n); n++; }
+    return shuffle([b, ...[...d].slice(0, 3)]);
+}
+/* Resultado unificado para todos los tipos de reto */
+function mgTablesResult(isCorrect) {
     const fb = document.getElementById('mg-feedback');
-    if (n === mg.product) {
+    if (isCorrect) {
+        if ((mg.tries || 0) === 0) mg.firstTry++;   // acertó a la primera
         mg.combo++; if (mg.combo > mg.bestCombo) mg.bestCombo = mg.combo;
         mg.correctCount++;
-        const bonus = mg.combo >= 3 ? 4 : 0;   // bonus por combo
-        let msg = `¡Correcto! ${mg.a} × ${mg.b} = ${mg.product} 🎉`;
-        if (mg.combo === 3) msg = `🔥 ¡Combo x3! ${mg.a} × ${mg.b} = ${mg.product}`;
-        else if (mg.combo >= 5) msg = `🔥🔥 ¡Increíble, combo x${mg.combo}! = ${mg.product}`;
+        const bonus = mg.combo >= 3 ? 4 : 0;
+        let msg = '¡Correcto! 🎉';
+        if (mg.combo === 3) msg = '🔥 ¡Combo x3!';
+        else if (mg.combo >= 5) msg = `🔥🔥 ¡Increíble, combo x${mg.combo}!`;
         fb.innerHTML = `<span style="color:#228B22;">${msg}</span>`;
         playCorrect(); launchConfetti(mg.combo >= 3 ? 40 : 22); buddyReact(false);
-        speak(mg.combo >= 3 ? `¡Combo! ¡Excelente, Valery!` : `¡Excelente, Valery!`, { pitch: 1.15 });
+        speak(mg.combo >= 3 ? '¡Combo! ¡Excelente, Valery!' : '¡Excelente, Valery!', { pitch: 1.15 });
         mgReward(8 + bonus, 2); mgNext();
     } else {
         mg.combo = 0; mg.tries = (mg.tries || 0) + 1;
-        fb.innerHTML = `<span style="color:#EE5253;">¡Buuuh! Mira: cuenta de ${mg.a} en ${mg.a} 👇</span>`;
+        fb.innerHTML = `<span style="color:#EE5253;">¡Buuuh! Mira la pista 👇</span>`;
         playWrong(); speak('¡Buuuh!', { pitch: 0.7, rate: 0.85 });
-        mgTablesRender(true);   // vuelve a dibujar mostrando el conteo saltado como ayuda
+        mgTablesRender(true);   // vuelve a dibujar con la ayuda
     }
+}
+function mgTablesPick(n) { mgTablesResult(n === mg.answer); }
+function mgTablesPickTF(v) { mgTablesResult(v === mg.tfAnswer); }
+function mgTablesWrite() {
+    const input = document.getElementById('mg-write-input');
+    if (!input) return;
+    const val = parseInt(String(input.value).replace(/[^\d]/g, ''), 10);
+    if (isNaN(val)) { showBuddyBubble('Escribe un número ✏️'); return; }
+    mgTablesResult(val === mg.product);
 }
