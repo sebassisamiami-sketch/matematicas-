@@ -222,6 +222,21 @@
             border:2px solid #6C5CE7; border-radius:12px; padding:10px; margin:10px auto; max-width:100%; }
         .dot-row { display:flex; gap:4px; justify-content:center; }
         .dot { width:14px; height:14px; border-radius:50%; background:#A29BFE; box-shadow:inset 0 -2px 0 rgba(0,0,0,0.12); }
+        /* Tabla de multiplicar: mejoras didácticas y divertidas */
+        .pstar-row { display:flex; gap:2px; justify-content:center; flex-wrap:wrap; margin:6px 0; }
+        .pstar { font-size:1.1em; color:#ccc; transition:transform 0.2s; }
+        .pstar.on { color:#FFD700; transform:scale(1.15); }
+        .combo { display:inline-block; background:#FF6B6B; color:#fff; border-radius:10px; padding:2px 8px; font-size:0.85em; margin-left:6px; animation: pulse 0.6s ease; }
+        .skip-line { background:#FFF8DC; border:2px dashed #FFA500; border-radius:12px; padding:8px; margin:8px auto; max-width:420px; }
+        .skip-title { font-size:0.8em; color:#B8860B; font-weight:bold; margin-bottom:4px; }
+        .skip-n { display:inline-block; background:#fff; border:1px solid #FFA500; border-radius:8px; padding:2px 7px; margin:2px; font-weight:bold; color:#333; }
+        .skip-n.hi { background:#10AC84; color:#fff; border-color:#10AC84; transform:scale(1.1); }
+        .skip-ar { color:#FFA500; font-weight:bold; }
+        .table-chart { display:grid; grid-template-columns:repeat(2,1fr); gap:6px 14px; max-width:420px; margin:12px auto; }
+        .table-chart .trow { display:flex; align-items:center; justify-content:center; gap:6px; background:#fff;
+            border:2px solid var(--tcol,#6C5CE7); border-radius:10px; padding:6px 8px; font-weight:bold; animation: popIn 0.35s ease both; }
+        .table-chart .tq { color:#555; } .table-chart .teq { color:#999; }
+        .table-chart .ta { color:var(--tcol,#6C5CE7); font-size:1.15em; }
 
         /* ===== PANEL VISUAL DIDÁCTICO DE LAS PREGUNTAS ===== */
         #question-visual { margin: 6px auto 14px; }

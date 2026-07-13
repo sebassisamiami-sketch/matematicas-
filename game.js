@@ -1784,9 +1784,22 @@ function mgComplete() {
     setMgDone(mg.id);
     document.getElementById('mg-title').innerText = '🏅 ¡Juego Completado!';
     document.getElementById('mg-instructions').innerText = '';
-    document.getElementById('mg-area').innerHTML =
-        `<div class="viz"><div style="font-size:3em">🏆</div>
-         <div style="font-size:1.3em;font-weight:bold;color:#10AC84;">¡Muy bien, Valery! Terminaste este juego.</div></div>`;
+    // Celebración especial del juego de tablas: muestra la tabla dominada
+    let body;
+    if (mg.id === 'tables' && mg.table > 0) {
+        body = `<div style="font-size:2.4em">🏆⭐</div>
+            <div style="font-size:1.2em;font-weight:bold;color:#10AC84;">¡Dominaste la tabla del ${mg.table}!</div>
+            <div style="font-size:0.9em;color:#666;margin:4px 0;">Mejor combo: 🔥 ${mg.bestCombo || 0}</div>
+            ${buildTableChart(mg.table, true)}`;
+    } else if (mg.id === 'tables') {
+        body = `<div style="font-size:2.6em">🏆🎲</div>
+            <div style="font-size:1.2em;font-weight:bold;color:#10AC84;">¡Practicaste muchas tablas, Valery!</div>
+            <div style="font-size:0.9em;color:#666;margin:4px 0;">Mejor combo: 🔥 ${mg.bestCombo || 0}</div>`;
+    } else {
+        body = `<div style="font-size:3em">🏆</div>
+            <div style="font-size:1.3em;font-weight:bold;color:#10AC84;">¡Muy bien, Valery! Terminaste este juego.</div>`;
+    }
+    document.getElementById('mg-area').innerHTML = `<div class="viz">${body}</div>`;
     document.getElementById('mg-feedback').innerHTML = '';
     document.getElementById('mg-controls').innerHTML =
         `<button class="btn" onclick="goMenu()">🗺️ Volver al mapa</button>
@@ -1989,9 +2002,12 @@ function mgMcmPick(v) {
 
 
 
-/* ===== JUEGO 4: Tablas de Multiplicar (interactivo con arreglo de puntos) ===== */
+/* ===== JUEGO 4: Tablas de Multiplicar (didáctico e interactivo) =====
+   Incluye: modo estudiar la tabla, arreglo de puntos, combos con bonus,
+   barra de progreso de estrellas, ayuda de conteo saltado y celebración final. */
+const TABLE_COLORS = { 2:'#FF9F43', 3:'#10AC84', 4:'#0ABDE3', 5:'#EE5253', 6:'#5F27CD', 7:'#E84393', 8:'#F368E0', 9:'#FF6B6B', 0:'#6C5CE7' };
 function mgTablesStart() {
-    mg = { id:'tables', round:1, total:10 };
+    mg = { id:'tables', round:1, total:10, combo:0, bestCombo:0, correctCount:0 };
     document.getElementById('mg-title').innerText = '✖️ Tablas de Multiplicar';
     mgUpdateHud();
     mgTablesSelect();
@@ -2001,41 +2017,91 @@ function mgTablesSelect() {
     document.getElementById('mg-feedback').innerHTML = '';
     document.getElementById('mg-controls').innerHTML = '';
     let tiles = '';
-    for (let t = 2; t <= 9; t++) tiles += `<button class="num-tile" onclick="mgTablesBegin(${t})">${t}</button>`;
-    tiles += `<button class="num-tile" style="background:#EE5253;box-shadow:0 4px 0 #b83b3b;min-width:90px;" onclick="mgTablesBegin(0)">🎲 Mezcla</button>`;
+    for (let t = 2; t <= 9; t++) {
+        tiles += `<button class="num-tile" style="background:${TABLE_COLORS[t]};box-shadow:0 4px 0 rgba(0,0,0,0.25);" onclick="mgTablesChoose(${t})">${t}</button>`;
+    }
+    tiles += `<button class="num-tile" style="background:#333;box-shadow:0 4px 0 #000;min-width:90px;" onclick="mgTablesChoose(0)">🎲 Mezcla</button>`;
     document.getElementById('mg-area').innerHTML =
-        `<div class="num-tiles" style="max-width:380px;margin:10px auto;">${tiles}</div>`;
+        `<div class="num-tiles" style="max-width:400px;margin:10px auto;">${tiles}</div>`;
 }
-function mgTablesBegin(table) {
-    mg.table = table;            // 0 = mezcla
-    mg.round = 1; mg.total = 10;
-    mg.queue = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+/* Construye la tabla completa (opcionalmente resaltando cada fila) */
+function buildTableChart(table, celebrate) {
+    let rows = '';
+    for (let i = 1; i <= 10; i++) {
+        rows += `<div class="trow"${celebrate ? ` style="animation-delay:${i * 0.06}s"` : ''}>
+            <span class="tq">${table} × ${i}</span><span class="teq">=</span><span class="ta">${table * i}</span></div>`;
+    }
+    return `<div class="table-chart" style="--tcol:${TABLE_COLORS[table] || '#6C5CE7'}">${rows}</div>`;
+}
+/* Paso 1: al elegir una tabla, se puede estudiar antes de jugar */
+function mgTablesChoose(table) {
     playClick();
+    mg.table = table;
+    if (table === 0) { mgTablesPlay(); return; }   // mezcla: directo a jugar
+    document.getElementById('mg-instructions').innerText = `📖 Estudia la tabla del ${table}. Cuando estés lista, ¡a jugar!`;
+    document.getElementById('mg-feedback').innerHTML = '';
+    document.getElementById('mg-area').innerHTML = buildTableChart(table);
+    document.getElementById('mg-controls').innerHTML =
+        `<button class="btn" style="background:#10AC84;box-shadow:0 6px 0 #0a8f6d;" onclick="mgTablesPlay()">🎮 ¡A jugar!</button>
+         <button class="btn" style="background:#9370DB;box-shadow:0 6px 0 #6A5ACD;" onclick="mgTablesSpeakTable()">🔊 Escuchar</button>`;
+}
+/* Lee la tabla en voz alta (locutor) */
+function mgTablesSpeakTable() {
+    if (!mg || !mg.table) return;
+    const parts = [];
+    for (let i = 1; i <= 10; i++) parts.push(`${mg.table} por ${i} es ${mg.table * i}`);
+    speak(parts.join('. '), { rate: 1.0 });
+}
+function mgTablesPlay() {
+    playClick();
+    mg.round = 1; mg.total = 10; mg.combo = 0; mg.bestCombo = 0; mg.correctCount = 0;
+    mg.queue = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     mgUpdateHud();
     mgTablesRound();
 }
 function mgTablesRound() {
     const b = mg.queue[mg.round - 1];
     const a = mg.table === 0 ? (2 + Math.floor(Math.random() * 8)) : mg.table;
-    mg.a = a; mg.b = b; mg.product = a * b;
-    document.getElementById('mg-instructions').innerText = `Toca el resultado correcto de ${a} × ${b}`;
+    mg.a = a; mg.b = b; mg.product = a * b; mg.tries = 0;
+    document.getElementById('mg-instructions').innerText = `Toca el resultado de ${a} × ${b}`;
     document.getElementById('mg-feedback').innerHTML = '';
     mgTablesRender();
 }
-function mgTablesRender() {
+function mgTablesRender(revealSkip) {
+    const color = TABLE_COLORS[mg.table] || '#6C5CE7';
+    // Arreglo de puntos (filas × columnas)
     let dots = '';
     for (let r = 0; r < mg.a; r++) {
         let row = '';
-        for (let c = 0; c < mg.b; c++) row += '<span class="dot"></span>';
+        for (let c = 0; c < mg.b; c++) row += `<span class="dot" style="background:${color}"></span>`;
         dots += `<div class="dot-row">${row}</div>`;
+    }
+    // Barra de progreso con estrellas (10 casillas)
+    let stars = '';
+    for (let i = 0; i < mg.total; i++) {
+        stars += `<span class="pstar ${i < mg.correctCount ? 'on' : ''}">${i < mg.correctCount ? '⭐' : '·'}</span>`;
+    }
+    // Combo
+    const comboTag = mg.combo >= 2 ? `<span class="combo">🔥 Combo x${mg.combo}</span>` : '';
+    // Ayuda de conteo saltado (solo tras fallar)
+    let skip = '';
+    if (revealSkip) {
+        let seq = '';
+        for (let i = 1; i <= mg.b; i++) {
+            const val = mg.a * i;
+            seq += `<span class="skip-n ${i === mg.b ? 'hi' : ''}">${val}</span>${i < mg.b ? '<span class="skip-ar">→</span>' : ''}`;
+        }
+        skip = `<div class="skip-line"><div class="skip-title">Cuenta de ${mg.a} en ${mg.a}:</div>${seq}</div>`;
     }
     const opts = mgProductOptions(mg.a, mg.b);
     const tiles = opts.map(n => `<button class="num-tile" onclick="mgTablesAnswer(${n})">${n}</button>`).join('');
     document.getElementById('mg-area').innerHTML = `
-        <div class="mg-progress">Ronda ${mg.round} de ${mg.total} · Tabla ${mg.table === 0 ? 'mezclada' : 'del ' + mg.table}</div>
-        <div style="font-size:2em;font-weight:bold;color:#6C5CE7;">${mg.a} × ${mg.b}</div>
-        <div class="dot-grid">${dots}</div>
-        <div style="font-size:0.85em;color:#666;">${mg.a} fila(s) de ${mg.b} 🟣</div>
+        <div class="mg-progress">Ronda ${mg.round}/${mg.total} · Tabla ${mg.table === 0 ? 'mezclada 🎲' : 'del ' + mg.table} ${comboTag}</div>
+        <div class="pstar-row">${stars}</div>
+        <div style="font-size:2.2em;font-weight:bold;color:${color};">${mg.a} × ${mg.b}</div>
+        <div class="dot-grid" style="border-color:${color}">${dots}</div>
+        <div style="font-size:0.85em;color:#666;">${mg.a} fila(s) de ${mg.b}</div>
+        ${skip}
         <div class="num-tiles">${tiles}</div>`;
     document.getElementById('mg-controls').innerHTML = '';
 }
@@ -2051,11 +2117,20 @@ function mgProductOptions(a, b) {
 function mgTablesAnswer(n) {
     const fb = document.getElementById('mg-feedback');
     if (n === mg.product) {
-        fb.innerHTML = `<span style="color:#228B22;">¡Correcto! ${mg.a} × ${mg.b} = ${mg.product} 🎉</span>`;
-        playCorrect(); launchConfetti(25); speak('¡Excelente, Valery!', { pitch: 1.15 }); buddyReact(false);
-        mgReward(8, 2); mgNext();
+        mg.combo++; if (mg.combo > mg.bestCombo) mg.bestCombo = mg.combo;
+        mg.correctCount++;
+        const bonus = mg.combo >= 3 ? 4 : 0;   // bonus por combo
+        let msg = `¡Correcto! ${mg.a} × ${mg.b} = ${mg.product} 🎉`;
+        if (mg.combo === 3) msg = `🔥 ¡Combo x3! ${mg.a} × ${mg.b} = ${mg.product}`;
+        else if (mg.combo >= 5) msg = `🔥🔥 ¡Increíble, combo x${mg.combo}! = ${mg.product}`;
+        fb.innerHTML = `<span style="color:#228B22;">${msg}</span>`;
+        playCorrect(); launchConfetti(mg.combo >= 3 ? 40 : 22); buddyReact(false);
+        speak(mg.combo >= 3 ? `¡Combo! ¡Excelente, Valery!` : `¡Excelente, Valery!`, { pitch: 1.15 });
+        mgReward(8 + bonus, 2); mgNext();
     } else {
-        fb.innerHTML = `<span style="color:#EE5253;">¡Buuuh! Cuenta los puntos: ${mg.a} filas de ${mg.b}. 👀</span>`;
+        mg.combo = 0; mg.tries = (mg.tries || 0) + 1;
+        fb.innerHTML = `<span style="color:#EE5253;">¡Buuuh! Mira: cuenta de ${mg.a} en ${mg.a} 👇</span>`;
         playWrong(); speak('¡Buuuh!', { pitch: 0.7, rate: 0.85 });
+        mgTablesRender(true);   // vuelve a dibujar mostrando el conteo saltado como ayuda
     }
 }
