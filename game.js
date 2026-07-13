@@ -1629,7 +1629,8 @@ function openProgress() {
     const data = {
         gems: getGems(), points: getPoints(), stars: getStars(),
         medals: getMedals(), owned: getOwned(), equip: getEquip(),
-        cashRedeemed: getCashRedeemed(), cashLog: getCashLog()
+        cashRedeemed: getCashRedeemed(), cashLog: getCashLog(),
+        journeyMax: getJourneyMax(), mgDone: getMgDone()
     };
     document.getElementById('export-code').value = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
     document.getElementById('import-msg').innerText = '';
@@ -1657,6 +1658,8 @@ function importProgress() {
         if (data.equip) setEquip(data.equip);
         if (data.cashRedeemed !== undefined) setCashRedeemed(data.cashRedeemed);
         if (data.cashLog) lsSet('vmCashLog', JSON.stringify(data.cashLog));
+        if (data.journeyMax !== undefined) lsSet('vmJourneyMax', String(data.journeyMax));
+        if (data.mgDone) lsSet('vmMgDone', JSON.stringify(data.mgDone));
         msg.style.color = '#228B22'; msg.innerText = '¡Progreso cargado! 🎉';
         playWin(); applyEquip();
     } catch(e) {
@@ -1716,7 +1719,8 @@ const minigamesData = [
     { id:'division', emoji:'🍬', name:'Reparto de Caramelos', tag:'Divisiones (2,3,4,5,6)' },
     { id:'zeros',    emoji:'0️⃣', name:'Máquina de Ceros',      tag:'× 10, 100, 1000' },
     { id:'mcm',      emoji:'🪜', name:'Escalera de Múltiplos',  tag:'M.C.M.' },
-    { id:'tables',   emoji:'✖️', name:'Tablas de Multiplicar',  tag:'Tablas del 2 al 9' }
+    { id:'tables',   emoji:'✖️', name:'Tablas de Multiplicar',  tag:'Tablas del 2 al 9' },
+    { id:'journey',  emoji:'🚀', name:'Aventura de las Tablas',  tag:'Escribe del 1 al 10 · 3 pistas' }
 ];
 function getMgDone() { try { return JSON.parse(lsGet('vmMgDone','{}')); } catch(e){ return {}; } }
 function setMgDone(id) { const d = getMgDone(); d[id] = true; lsSet('vmMgDone', JSON.stringify(d)); }
@@ -1754,7 +1758,7 @@ function mgUpdateHud() {
     document.getElementById('mg-stars').innerText = getStars();
     document.getElementById('mg-points').innerText = getPoints();
     document.getElementById('mg-gems').innerText = getGems();
-    document.getElementById('mg-round').innerText = mg ? mg.round : 1;
+    document.getElementById('mg-round').innerText = (mg && mg.round) ? mg.round : 1;
 }
 function openMinigame(id) {
     playClick(); getCtx(); unlockAudio();
@@ -1763,6 +1767,7 @@ function openMinigame(id) {
     else if (id === 'zeros') mgZerosStart();
     else if (id === 'mcm') mgMcmStart();
     else if (id === 'tables') mgTablesStart();
+    else if (id === 'journey') mgJourneyStart();
 }
 function mgRestart() { if (mg) { playClick(); openMinigame(mg.id); } }
 function mgReward(points, gems) {
@@ -2211,4 +2216,149 @@ function mgTablesWrite() {
     const val = parseInt(String(input.value).replace(/[^\d]/g, ''), 10);
     if (isNaN(val)) { showBuddyBubble('Escribe un número ✏️'); return; }
     mgTablesResult(val === mg.product);
+}
+
+
+
+/* =====================================================
+   JUEGO 5: AVENTURA DE LAS TABLAS (del 1 al 10, escrito)
+   Recorre las 10 tablas en orden. Cada tabla: escribe ×1 a ×10.
+   3 pistas por tabla (se reinician al empezar cada tabla). Muy didáctico.
+   ===================================================== */
+function getJourneyMax() { return parseInt(lsGet('vmJourneyMax', '0'), 10) || 0; }
+function setJourneyMax(n) { if (n > getJourneyMax()) lsSet('vmJourneyMax', String(n)); }
+
+function mgJourneyStart() {
+    mg = { id: 'journey' };
+    document.getElementById('mg-title').innerText = '🚀 Aventura de las Tablas';
+    mgUpdateHud();
+    mgJourneyMap();
+}
+/* Mapa de las 10 tablas (camino a completar) */
+function mgJourneyMap() {
+    const max = getJourneyMax();
+    document.getElementById('mg-instructions').innerText = max >= 10
+        ? '¡Completaste la aventura! Toca una tabla para repasarla. 🌟'
+        : 'Escribe las tablas del 1 al 10 para completar el nivel. ✏️';
+    document.getElementById('mg-feedback').innerHTML = '';
+    document.getElementById('mg-controls').innerHTML = max > 0
+        ? `<button class="btn" style="background:#10AC84;box-shadow:0 6px 0 #0a8f6d;" onclick="mgJourneyPlayTable(${Math.min(max + 1, 10)})">▶️ ${max >= 10 ? 'Repasar tabla del 10' : 'Continuar (tabla del ' + (max + 1) + ')'}</button>`
+        : `<button class="btn" style="background:#10AC84;box-shadow:0 6px 0 #0a8f6d;" onclick="mgJourneyPlayTable(1)">▶️ ¡Empezar por la tabla del 1!</button>`;
+    let nodes = '';
+    for (let t = 1; t <= 10; t++) {
+        const done = t <= max, current = t === max + 1, locked = t > max + 1;
+        const cls = 'jnode' + (done ? ' done' : '') + (current ? ' current' : '') + (locked ? ' locked' : '');
+        const click = locked ? '' : `onclick="mgJourneyPlayTable(${t})"`;
+        const badge = done ? '⭐' : (locked ? '🔒' : '▶️');
+        nodes += `<div class="${cls}" ${click}><span class="jn-num">${t}</span><span class="jn-badge">${badge}</span></div>`;
+    }
+    const pct = Math.round(max / 10 * 100);
+    document.getElementById('mg-area').innerHTML = `
+        <div class="mg-progress">Tablas completadas: ${max}/10</div>
+        <div class="jmap">${nodes}</div>
+        <div class="jbar"><div class="jbar-fill" style="width:${pct}%"></div></div>`;
+}
+function mgJourneyPlayTable(t) {
+    playClick();
+    mg.table = t; mg.qIndex = 1; mg.hints = 3; mg.combo = 0; mg.hintShown = false;
+    mgJourneyQuestion();
+}
+function mgJourneyQuestion() {
+    mg.answer = mg.table * mg.qIndex; mg.tries = 0; mg.hintShown = false;
+    document.getElementById('mg-instructions').innerText = `Tabla del ${mg.table} · escribe el resultado`;
+    document.getElementById('mg-feedback').innerHTML = '';
+    mgJourneyRender();
+}
+function mgJourneyDots(t, q, color) {
+    let dots = '';
+    for (let r = 0; r < t; r++) { let row = ''; for (let c = 0; c < q; c++) row += `<span class="dot" style="background:${color}"></span>`; dots += `<div class="dot-row">${row}</div>`; }
+    return `<div class="dot-grid" style="border-color:${color}">${dots}</div>`;
+}
+function mgJourneyRender(showHelp) {
+    const t = mg.table, q = mg.qIndex, color = TABLE_COLORS[t] || '#6C5CE7';
+    let prog = '';
+    for (let i = 1; i <= 10; i++) prog += `<span class="pstar ${i < q ? 'on' : ''}">${i < q ? '⭐' : (i === q ? '✏️' : '·')}</span>`;
+    const dots = (mg.answer <= 30) ? mgJourneyDots(t, q, color) : `<div style="font-size:0.9em;color:#666;margin:6px 0;">${t} grupos de ${q}</div>`;
+    let help = '';
+    if (showHelp) {
+        let seq = '';
+        for (let i = 1; i <= q; i++) { seq += `<span class="skip-n ${i === q ? 'hi' : ''}">${i === q ? '?' : t * i}</span>${i < q ? '<span class="skip-ar">→</span>' : ''}`; }
+        help = `<div class="skip-line"><div class="skip-title">Cuenta de ${t} en ${t}:</div>${seq}</div>`;
+    }
+    document.getElementById('mg-area').innerHTML = `
+        <div class="mg-progress">Tabla del ${t} · ${q}/10</div>
+        <div class="pstar-row">${prog}</div>
+        <div class="mg-eq" style="color:${color}">${t} × ${q} =</div>
+        ${dots}
+        ${help}
+        <div class="write-row">
+            <input type="text" id="journey-input" class="write-input" inputmode="numeric" autocomplete="off" placeholder="?" onkeydown="if(event.key==='Enter')mgJourneyCheck()">
+            <button class="btn write-check" onclick="mgJourneyCheck()">✅</button>
+        </div>`;
+    document.getElementById('mg-controls').innerHTML = `
+        <button class="btn hint-btn" onclick="mgJourneyHint()" ${mg.hints <= 0 ? 'disabled' : ''}>💡 Pista (${mg.hints})</button>
+        <button class="btn" style="background:#9370DB;box-shadow:0 6px 0 #6A5ACD;" onclick="mgJourneyMap()">🗺️ Mapa</button>`;
+}
+function mgJourneyHint() {
+    if (mg.hints <= 0) { showBuddyBubble('¡Ya usaste tus 3 pistas de esta tabla! 💡'); playWrong(); return; }
+    if (!mg.hintShown) { mg.hints--; mg.hintShown = true; }   // 1 pista por pregunta
+    playClick();
+    showBuddyBubble(`Cuenta de ${mg.table} en ${mg.table} 👇`);
+    mgJourneyRender(true);
+}
+function mgJourneyCheck() {
+    const input = document.getElementById('journey-input');
+    if (!input) return;
+    const val = parseInt(String(input.value).replace(/[^\d]/g, ''), 10);
+    if (isNaN(val)) { showBuddyBubble('Escribe un número ✏️'); return; }
+    const fb = document.getElementById('mg-feedback');
+    if (val === mg.answer) {
+        mg.combo++;
+        const bonus = mg.combo >= 3 ? 2 : 0;
+        mgReward(6 + bonus, 1);
+        fb.innerHTML = `<span style="color:#228B22;">¡Correcto! ${mg.table} × ${mg.qIndex} = ${mg.answer} 🎉</span>`;
+        playCorrect(); launchConfetti(mg.combo >= 3 ? 36 : 18); buddyReact(false);
+        speak('¡Excelente, Valery!', { pitch: 1.15 });
+        mg.qIndex++;
+        if (mg.qIndex > 10) setTimeout(mgJourneyTableComplete, 800);
+        else setTimeout(mgJourneyQuestion, 650);
+    } else {
+        mg.combo = 0; mg.tries++;
+        fb.innerHTML = `<span style="color:#EE5253;">¡Buuuh! Usa una 💡 pista si la necesitas.</span>`;
+        playWrong(); speak('¡Buuuh!', { pitch: 0.7, rate: 0.85 });
+    }
+}
+function mgJourneyTableComplete() {
+    setJourneyMax(mg.table);
+    addGems(20); addStars(1); mgUpdateHud();
+    const done = getJourneyMax();
+    launchConfetti(90); playWin();
+    if (mg.table >= 10) {
+        setMgDone('journey'); addGems(100); mgUpdateHud();
+        document.getElementById('mg-title').innerText = '🏆 ¡Aventura Completada!';
+        document.getElementById('mg-instructions').innerText = '';
+        document.getElementById('mg-area').innerHTML = `<div class="viz">
+            <div style="font-size:3em">🏆🚀🌟</div>
+            <div style="font-size:1.3em;font-weight:bold;color:#10AC84;">¡Aprendiste TODAS las tablas del 1 al 10, Valery!</div>
+            <div class="viz-title">💎 +100 diamantes de premio final</div></div>`;
+        document.getElementById('mg-feedback').innerHTML = '';
+        document.getElementById('mg-controls').innerHTML = `
+            <button class="btn" onclick="goMenu()">🗺️ Volver al mapa</button>
+            <button class="btn" style="background:#EE5253;box-shadow:0 6px 0 #b83b3b;" onclick="mgJourneyStart()">🔄 Repasar</button>`;
+        speak('¡Felicitaciones, Valery! ¡Aprendiste todas las tablas!', { pitch: 1.1 });
+        renderMinigames();
+    } else {
+        document.getElementById('mg-title').innerText = `⭐ ¡Tabla del ${mg.table} completada!`;
+        document.getElementById('mg-instructions').innerText = '';
+        document.getElementById('mg-area').innerHTML = `<div class="viz">
+            <div style="font-size:2.6em">⭐🎉</div>
+            <div style="font-size:1.2em;font-weight:bold;color:#10AC84;">¡Completaste la tabla del ${mg.table}!</div>
+            <div class="viz-title">💎 +20 diamantes · ${done}/10 tablas</div>
+            ${buildTableChart(mg.table, true)}</div>`;
+        document.getElementById('mg-feedback').innerHTML = '';
+        document.getElementById('mg-controls').innerHTML = `
+            <button class="btn" style="background:#10AC84;box-shadow:0 6px 0 #0a8f6d;" onclick="mgJourneyPlayTable(${mg.table + 1})">➡️ Tabla del ${mg.table + 1}</button>
+            <button class="btn" style="background:#9370DB;box-shadow:0 6px 0 #6A5ACD;" onclick="mgJourneyMap()">🗺️ Ver mapa</button>`;
+        speak(`¡Muy bien! Completaste la tabla del ${mg.table}`, { pitch: 1.15 });
+    }
 }
